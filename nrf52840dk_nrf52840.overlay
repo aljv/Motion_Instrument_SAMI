@@ -1,0 +1,222 @@
+// To get started, press Ctrl+Space to bring up the completion menu and view the available nodes.
+
+// You can also use the buttons in the sidebar to perform actions on nodes.
+// Actions currently available include:
+
+// * Enabling / disabling the node
+// * Adding the bus to a bus
+// * Removing the node
+// * Connecting ADC channels
+
+// For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
+// You can also visit the nRF DeviceTree extension documentation at https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
+
+/* pat added - commented out zephyr,user parent node
+/ {
+	zephyr,user {
+		//pat added - commented out these lines
+		//VS_SPI_DCS-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		//VS_SPI_xRESET-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		//VS_SPI_DREQ-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		//VS_SPI_MISO-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		//VS_SPI_MOSI-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		//VS_SPI_SCK-gpios = <&gpio1 15 0>;
+		//VS_SPI_MCS-gpios = <&gpio0 5 0>;
+		BAT_SOC-gpios = <&gpio0 3 0>;
+		MAX_MUTE-gpios = <&gpio0 29 0>;
+		B1LED_AIN0-gpios = <&gpio0 2 0>;
+		MAX_SHDN-gpios = <&gpio0 31 0>;
+		AIN4-gpios = <&gpio0 28 0>;
+		AIN6-gpios = <&gpio0 30 0>;
+		XL1-gpios = <&gpio0 0 0>;
+		XL2-gpios = <&gpio0 1 0>;
+		V_CTRL-gpios = <&gpio0 4 0>;
+		VS_RX-gpios = <&gpio0 6 0>;
+		PWR_LED-gpios = <&gpio0 7 0>;
+		R_LED_DOME-gpios = <&gpio0 8 0>;
+		B4LED-gpios = <&gpio1 8 0>;
+		G_LED_DOME-gpios = <&gpio1 9 0>;
+		SDC_SPI_MCS-gpios = <&gpio0 11 0>;
+		SDC_SPI_MOSI-gpios = <&gpio0 12 0>;
+		SDC_SPI_SCK-gpios = <&gpio0 14 0>;
+		SDC_SPI_MISO-gpios = <&gpio0 13 0>;
+		RESET-gpios = <&gpio0 18 0>;
+
+		ENC1SW_DB-gpios = <&gpio0 16 0>;
+		ENC2A-gpios = <&gpio0 21 0>;
+		ENC1A-gpios = <&gpio0 17 0>;
+		ENC1B-gpios = <&gpio0 19 0>;
+		ENC2B-gpios = <&gpio0 20 0>;
+		ENC2SW_DB-gpios = <&gpio1 2 0>;
+
+		SWO-gpios = <&gpio1 0 0>;
+		B3_LED-gpios = <&gpio0 25 0>;
+		MODE_SW_DB-gpios = <&gpio0 9 0>;
+		MUTE-gpios = <&gpio0 10 0>;
+		
+		TRIG_1-gpios = <&gpio1 5 0>;
+		TRIG_2-gpios = <&gpio1 3 0>;
+		TRIG_3-gpios = <&gpio1 1 0>;
+		TRIG_4-gpios = <&gpio1 12 0>;
+		JB1_DB-gpios = <&gpio0 15 0>;
+		JB2_DB-gpios = <&gpio0 23 0>;
+		JB3_DB-gpios = <&gpio0 22 0>;
+		JB4_DB-gpios = <&gpio0 24 0>;
+	};
+};
+*/
+
+//pat added - created chosen parent node
+/{
+		zephyr,user {
+
+		};
+};
+
+//pat added - created gpioPins parent node (layout copied from joystick code)
+/{
+	gpioPins {
+		compatible = "gpio-keys";
+		
+		//Encoder pins
+		ENC1SW_DB: ENC1SW_DB {
+			gpios = <&gpio0 16 0>;
+			label = "ENC1 SW";
+		};
+		ENC1A: ENC1A {
+			gpios = <&gpio0 17 0>;
+			label = "ENC1 A";
+		};
+		ENC1B: ENC1B {
+			gpios = <&gpio0 19 0>;
+			label = "ENC1 B";
+		};
+		ENC2SW_DB: ENC2SW_DB {
+			gpios = <&gpio1 2 0>;
+			label = "ENC2 SW";
+		};
+		ENC2A: ENC2A {
+			gpios = <&gpio0 21 0>;
+			label = "ENC2 A";
+		};
+		ENC2B: ENC2B {
+			gpios = <&gpio0 20 0>;
+			label = "ENC2 B";
+		};
+		
+		//Switch jacks
+		TRIG_1: TRIG_1 {
+			gpios = <&gpio1 5 0>;
+			label = "TRIG_1";
+		};
+		TRIG_2: TRIG_2 {
+			gpios = <&gpio1 3 0>;
+			label = "TRIG_2";
+		};
+		TRIG_3: TRIG_3 {
+			gpios = <&gpio1 1 0>;
+			label = "TRIG_3";
+		};
+		TRIG_4: TRIG_4 {
+			gpios = <&gpio1 12 0>;
+			label = "TRIG_4";
+		};
+		JB1_DB: JB1_DB {
+			gpios = <&gpio0 15 0>;
+			label = "JB1";
+		};
+		JB2_DB: JB2_DB {
+			gpios = <&gpio0 23 0>;
+			label = "JB2";
+		};
+		JB3_DB: JB3_DB {
+			gpios = <&gpio0 22 0>;
+			label = "JB3";
+		};
+		JB4_DB: JB4_DB {
+			gpios = <&gpio0 24 0>;
+			label = "JB4";
+		};
+
+	};
+};
+
+&button0 {
+	status = "disabled";
+};
+
+&button1 {
+	status = "disabled";
+};
+
+&button2 {
+	status = "disabled";
+};
+
+&button3 {
+	status = "disabled";
+};
+
+&led0 {
+	status = "disabled";
+};
+
+&led1 {
+	status = "disabled";
+};
+
+&led2 {
+	status = "disabled";
+};
+
+&led3 {
+	status = "disabled";
+};
+
+// pat added - removed qspi because of gpio conflict
+&qspi {
+	status = "disabled";
+};
+/*
+&qspi_default {
+	group1 {
+		psels = <NRF_PSEL(QSPI_IO2, 0, 22)>, <NRF_PSEL(QSPI_IO3, 0, 23)>;
+	};
+};
+
+&qspi_sleep {
+	group1 {
+		psels = <NRF_PSEL(QSPI_IO2, 0, 22)>, <NRF_PSEL(QSPI_IO3, 0, 23)>;
+	};
+};
+*/
+
+&i2c0 {
+    status = "okay";
+
+    lcd: lcd@72{
+        compatible = "i2c-device";
+        reg = <0x72>;
+        label = "SAMI_LCD";
+    };
+
+};
+
+&spi3 {
+	/* 
+		TODO: Add VS_SPI_DREQ, VS_SPI_xRESET, VS_SPI_MCS pins to this spi node
+	*/
+	status = "okay";
+	pinctrl-0 = <&spi3_default>; // spi3_default is MISO (1, 14), MOSI (1, 13) and SCK (1, 15)
+	pinctrl-1 = <&spi3_sleep>;
+	
+	pinctrl-names = "default", "sleep";
+
+	vs1053_spi: vs1053_spi@0 {
+		compatible = "spi-device"; // generic spi device
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		label = "VS1053_Codec";
+	};
+
+};
