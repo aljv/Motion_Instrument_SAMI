@@ -11,69 +11,107 @@
 // For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
 // You can also visit the nRF DeviceTree extension documentation at https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
 
-/* pat added - commented out zephyr,user parent node
-/ {
-	zephyr,user {
-		//pat added - commented out these lines
-		//VS_SPI_DCS-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-		//VS_SPI_xRESET-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-		//VS_SPI_DREQ-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-		//VS_SPI_MISO-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
-		//VS_SPI_MOSI-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
-		//VS_SPI_SCK-gpios = <&gpio1 15 0>;
-		//VS_SPI_MCS-gpios = <&gpio0 5 0>;
-		BAT_SOC-gpios = <&gpio0 3 0>;
-		MAX_MUTE-gpios = <&gpio0 29 0>;
-		B1LED_AIN0-gpios = <&gpio0 2 0>;
-		MAX_SHDN-gpios = <&gpio0 31 0>;
-		AIN4-gpios = <&gpio0 28 0>;
-		AIN6-gpios = <&gpio0 30 0>;
-		XL1-gpios = <&gpio0 0 0>;
-		XL2-gpios = <&gpio0 1 0>;
-		V_CTRL-gpios = <&gpio0 4 0>;
-		VS_RX-gpios = <&gpio0 6 0>;
-		PWR_LED-gpios = <&gpio0 7 0>;
-		R_LED_DOME-gpios = <&gpio0 8 0>;
-		B4LED-gpios = <&gpio1 8 0>;
-		G_LED_DOME-gpios = <&gpio1 9 0>;
-		SDC_SPI_MCS-gpios = <&gpio0 11 0>;
-		SDC_SPI_MOSI-gpios = <&gpio0 12 0>;
-		SDC_SPI_SCK-gpios = <&gpio0 14 0>;
-		SDC_SPI_MISO-gpios = <&gpio0 13 0>;
-		RESET-gpios = <&gpio0 18 0>;
+/*
+*
+	TODO:	-Make sure each of the SAMI pins that needs to be initialized in this file is done then update this list
+				- VS1053 Codec			done
+				- SD Card slot			done
+				- LCD					done
+				- Volume pot.			incomplete
+				- Audio amp.			incomplete
+				- Encoder/switch jacks	done
+				- Bat. monitoring/LED	incomplete
+				- Crystal pins			incomplete
+			
+			-Once all pins are initialized, check to see if that peripheral is operational
+				this has not been done for any yet.
+*
+	SAMI Total pins = 46 (excluding +3V3, GND, unconnected/without-number/programming pins)
 
-		ENC1SW_DB-gpios = <&gpio0 16 0>;
-		ENC2A-gpios = <&gpio0 21 0>;
-		ENC1A-gpios = <&gpio0 17 0>;
-		ENC1B-gpios = <&gpio0 19 0>;
-		ENC2B-gpios = <&gpio0 20 0>;
-		ENC2SW_DB-gpios = <&gpio1 2 0>;
+	//VS1053 Codec pins (8 pins)
+	VS_SPI_MISO-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	VS_SPI_MOSI-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+	VS_SPI_SCK-gpios = <&gpio1 15 0>;
+	VS_SPI_DCS-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+	VS_SPI_DREQ-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+	VS_SPI_xRESET-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+	VS_SPI_MCS-gpios = <&gpio0 5 0>;
+	VS_RX-gpios = <&gpio0 6 0>;
 
-		SWO-gpios = <&gpio1 0 0>;
-		B3_LED-gpios = <&gpio0 25 0>;
-		MODE_SW_DB-gpios = <&gpio0 9 0>;
-		MUTE-gpios = <&gpio0 10 0>;
-		
-		TRIG_1-gpios = <&gpio1 5 0>;
-		TRIG_2-gpios = <&gpio1 3 0>;
-		TRIG_3-gpios = <&gpio1 1 0>;
-		TRIG_4-gpios = <&gpio1 12 0>;
-		JB1_DB-gpios = <&gpio0 15 0>;
-		JB2_DB-gpios = <&gpio0 23 0>;
-		JB3_DB-gpios = <&gpio0 22 0>;
-		JB4_DB-gpios = <&gpio0 24 0>;
-	};
-};
+	//SD card slot pins (4 pins)
+	SDC_SPI_SCK-gpios = <&gpio0 14 0>;
+	SDC_SPI_MOSI-gpios = <&gpio 12 0>;
+	SDC_SPI_MISO-gpios = <&gpio0 13 0>;
+	SDC_SPI_MCS-gpios = <&gpio0 11 0>;
+
+	//LCD I2C pins (2 pins)
+	SCL-gpios = <&gpio0 27 0>;
+	SDA-gpios = <&gpio0 26 0>;
+
+	//Volume potentiometer input pin (1 pin)
+	V_CTRL-gpios = <&gpio0 4 0>;
+
+	//Audio amp pins (3 pins)
+	MUTE-gpios = <&gpio0 10 0>;
+	MAX_MUTE-gpios = <&gpio0 29 0>;
+	MAX_SHDN-gpios = <&gpio0 31 0>;
+
+	//Encoder and switch jack pins (14 pins)
+	ENC1SW_DB-gpios = <&gpio0 16 0>;
+	ENC1A-gpios = <&gpio0 17 0>;
+	ENC1B-gpios = <&gpio0 19 0>;
+	ENC2SW_DB-gpios = <&gpio1 2 0>;
+	ENC2A-gpios = <&gpio0 21 0>;
+	ENC2B-gpios = <&gpio0 20 0>;
+	TRIG_1-gpios = <&gpio1 5 0>;
+	TRIG_2-gpios = <&gpio1 3 0>;
+	TRIG_3-gpios = <&gpio1 1 0>;
+	TRIG_4-gpios = <&gpio1 12 0>;
+	JB1_DB-gpios = <&gpio0 15 0>;
+	JB2_DB-gpios = <&gpio0 23 0>;
+	JB3_DB-gpios = <&gpio0 22 0>;
+	JB4_DB-gpios = <&gpio0 24 0>;
+
+	//Battery monitoring and indication LED pins (2 pin)
+	BAT_SOC-gpios = <&gpio0 3 0>;
+	PWR_LED-gpios = <&gpio0 7 0>;
+
+	//Crystal pins (2 pins)
+	XL1-gpios = <&gpio0 0 0>;
+	XL2-gpios = <&gpio0 1 0>;
+
+	//Not used in SAMI (10 pins)
+	AIN4-gpios = <&gpio0 28 0>;
+	AIN6-gpios = <&gpio0 30 0>;
+	B1LED_AIN0-gpios = <&gpio0 2 0>;
+	B2LED-gpios = <&gpio1 10 0>;
+	B3LED-gpios = <&gpio0 25 0>;
+	B4LED-gpios = <&gpio1 8 0>;
+	RECLED-gpios = <&gpio1 11 0>;
+	MODE_SW_DB-gpios = <&gpio0 9 0>;
+	R_LED_DOME-gpios = <&gpio0 8 0>;
+	G_LED_DOME-gpios = <&gpio1 9 0>;
+	
 */
 
-//pat added - created chosen parent node
+
+/*
+*
+	TODO:	-Check if this (or any) parent node is required
+*
+*/
 /{
 		zephyr,user {
 
 		};
 };
 
-//pat added - created gpioPins parent node (layout copied from joystick code)
+/*
+*
+	TODO:	- Add any debounce and set polling mode for any gpio node if required
+*	
+*/
+//Create gpioPins parent node (layout copied from joystick2 code)
 /{
 	gpioPins {
 		compatible = "gpio-keys";
@@ -141,56 +179,7 @@
 	};
 };
 
-&button0 {
-	status = "disabled";
-};
-
-&button1 {
-	status = "disabled";
-};
-
-&button2 {
-	status = "disabled";
-};
-
-&button3 {
-	status = "disabled";
-};
-
-&led0 {
-	status = "disabled";
-};
-
-&led1 {
-	status = "disabled";
-};
-
-&led2 {
-	status = "disabled";
-};
-
-&led3 {
-	status = "disabled";
-};
-
-// pat added - removed qspi because of gpio conflict
-&qspi {
-	status = "disabled";
-};
-/*
-&qspi_default {
-	group1 {
-		psels = <NRF_PSEL(QSPI_IO2, 0, 22)>, <NRF_PSEL(QSPI_IO3, 0, 23)>;
-	};
-};
-
-&qspi_sleep {
-	group1 {
-		psels = <NRF_PSEL(QSPI_IO2, 0, 22)>, <NRF_PSEL(QSPI_IO3, 0, 23)>;
-	};
-};
-*/
-
+//Add LCD to i2c0
 &i2c0 {
     status = "okay";
 
@@ -202,12 +191,64 @@
 
 };
 
-&spi3 {
-	/* 
-		TODO: Add VS_SPI_DREQ, VS_SPI_xRESET, VS_SPI_MCS pins to this spi node
-	*/
+//Create custom pinouts for spi2
+&pinctrl {
+	spi2_custom_default: spi2_custom_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 14)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 12)>,
+				<NRF_PSEL(SPIM_MISO, 0, 13)>;
+		};
+	};
+
+	spi2_custom_sleep: spi2_custom_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 14)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 12)>,
+				<NRF_PSEL(SPIM_MISO, 0, 13)>;
+			low-power-enable;
+		};
+	};
+};
+
+/*
+* 
+	TODO: 	- Add SDC_SPI_MCS (&gpio0 11 0) to this spi node *IF NEEDED*
+			- Ensure this SPI controller uses CS line 0, or else you have to change the "reg = <0>" value and the "@0"
+*
+*/
+//Add SD card slot to spi2
+&spi2 {
+
 	status = "okay";
-	pinctrl-0 = <&spi3_default>; // spi3_default is MISO (1, 14), MOSI (1, 13) and SCK (1, 15)
+	pinctrl-0 = <&spi2_custom_default>;
+	pinctrl-1 = <&spi2_custom_sleep>;
+
+	pinctrl-names = "default", "sleep";
+
+	sdc_spi: sdc_spi@0 {
+		/*
+			TODO:	- Check "compatible" here, the commented out one could be better to use
+		*/
+		//compatible = "zephyr,sdhc-spi-slot"
+		compatible = "spi-device";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		label = "SD Card slot";
+	};
+
+};
+
+/*
+*
+	TODO: 	- Add VS_SPI_DREQ, VS_SPI_xRESET, VS_SPI_MCS, VS_RX pins to this spi node *IF NEEDED*
+			- Ensure this SPI controller uses CS line 0, or else you have to change the "reg = <0>" value and the "@0"
+*
+*/
+//Add VS1053 Codec to spi3
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spi3_default>; // spi3 is MISO (1, 14), MOSI (1, 13) and SCK (1, 15)
 	pinctrl-1 = <&spi3_sleep>;
 	
 	pinctrl-names = "default", "sleep";
@@ -219,4 +260,36 @@
 		label = "VS1053_Codec";
 	};
 
+};
+
+//Disable all unused dev. kit nodes
+&button0 {
+	status = "disabled";
+};
+&button1 {
+	status = "disabled";
+};
+&button2 {
+	status = "disabled";
+};
+&button3 {
+	status = "disabled";
+};
+&led0 {
+	status = "disabled";
+};
+&led1 {
+	status = "disabled";
+};
+&led2 {
+	status = "disabled";
+};
+&led3 {
+	status = "disabled";
+};
+&qspi {
+	status = "disabled";
+};
+&pwm0 {
+	status = "disabled";
 };
