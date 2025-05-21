@@ -6,6 +6,7 @@
 
 #include "VS1053_interface.h"
 #include "VS10xx_uc.h"
+#include "spi_interface.h"
 
 // Include plugin data
 #include "rtmidistart.plg"

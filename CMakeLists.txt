@@ -12,8 +12,15 @@ target_sources(app PRIVATE
   src/main.c
 )
 
+# INCLUDE DIRECTORIES
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/fs)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/zephyr/subsys/fs)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/../modules/fs/fatfs)
+
+# APP SPECIFIC DIRECTORIES
 add_subdirectory(src/hw_interface)
 add_subdirectory(src/hw_interface/ble_interface)
 add_subdirectory(src/hw_interface/VS1053_interface)
+add_subdirectory(src/hw_interface/sd_card_interface)
 
 # NORDIC SDK APP END
