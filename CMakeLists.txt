@@ -22,5 +22,6 @@ add_subdirectory(src/hw_interface)
 add_subdirectory(src/hw_interface/ble_interface)
 add_subdirectory(src/hw_interface/VS1053_interface)
 add_subdirectory(src/hw_interface/sd_card_interface)
+add_subdirectory(src/hw_interface/inputs_interface)
 
 # NORDIC SDK APP END

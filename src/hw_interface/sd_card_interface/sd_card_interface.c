@@ -45,6 +45,9 @@ static char file_buf[1024];
 static char track_file_names[MAX_MIDI_TRACKS][32];
 static uint8_t num_tracks = 0;
 
+// TODO PATRICK - This is code spat out by chat GPT after I put in SEGGER code into it and asked it to convert to NRF Connect
+//              - test all these functions out in main to see if it works and change accordingly. Uses FATFS
+
 /**
  * @brief Initialize the SD card interface hardware
  * 
@@ -64,6 +67,9 @@ int SDcardInterfaceInit(void) {
  * 
  * @return int 0 on success, negative error code otherwise
  */
+
+ // TODO - First test in main: <err> sd_card_interface: Failed to initialize disk. idk why look into it lmao
+
 int SDcardInit(void) {
     FRESULT res;
     
