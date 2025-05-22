@@ -250,8 +250,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi3_default>; // spi3 is MISO (1, 14), MOSI (1, 13) and SCK (1, 15)
 	pinctrl-1 = <&spi3_sleep>;
-	
 	pinctrl-names = "default", "sleep";
+
 
 	vs1053_spi: vs1053_spi@0 {
 		compatible = "spi-device"; // generic spi device
@@ -260,6 +260,36 @@
 		label = "VS1053_Codec";
 	};
 
+};
+
+// VS1053 GPIOS
+// for handling chip select and reset pins manually
+
+/ {
+
+	vs_gpios{
+		compatible = "gpio-keys";
+
+		vs_dreq: vs_dreq_pin {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			label = "VS_DREQ";
+		};
+
+		vs_reset: vs_reset_pin {
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			label = "VS_RESET";
+		};
+
+		vs_mcs: vs_mcs_pin {
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			label = "VS_MCS";
+		};
+
+		vs_dcs: vs_dcs_pin {
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			label = "VS_DCS";
+		};
+	};
 };
 
 //Disable all unused dev. kit nodes

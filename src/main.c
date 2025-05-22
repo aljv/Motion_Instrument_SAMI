@@ -17,6 +17,7 @@
 
 #include "hw_interface/ble_interface/ble_interface.h"
 #include "hw_interface/sd_card_interface/sd_card_interface.h"
+#include "hw_interface/VS1053_interface/VS1053_interface.h"
 #include "hw_interface/spi_interface.h"
 #include "hw_interface/i2c_interface.h"
 
@@ -32,10 +33,13 @@ LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
 int main(void)
 {
-    SDcardInit();
     dk_leds_init();
     dk_set_led_on(DK_LED1);
     LOG_INF("LED turned on");
+
+    VS1053HardwareReset();
+    VS1053SoftwareReset();
+
 
     while (1) {
         dk_set_led_off(DK_LED1);
