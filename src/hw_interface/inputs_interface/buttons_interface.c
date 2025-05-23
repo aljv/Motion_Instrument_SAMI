@@ -35,6 +35,12 @@ static const struct gpio_dt_spec BTN6 = GPIO_DT_SPEC_GET(DT_ALIAS(jb2), gpios);
 static const struct gpio_dt_spec BTN7 = GPIO_DT_SPEC_GET(DT_ALIAS(jb3), gpios);
 static const struct gpio_dt_spec BTN8 = GPIO_DT_SPEC_GET(DT_ALIAS(jb4), gpios);
 
+//global variables to hold current and previous state of encoders
+bool last_enc1_state;
+bool curr_enc1_state;
+bool last_enc2_state;
+bool curr_enc2_state;
+
 int ButtonsInit(void){
     if (!gpio_is_ready_dt(&BTN1)){
         LOG_ERR("ENC1SW not ready\n");
@@ -165,7 +171,21 @@ int EncodersInit(void){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
-
     return 0;
 }
 
+bool get_enc1_sw(void){
+    return gpio_pin_get_dt(&ENC1SW);
+}
+
+bool get_enc2_sw(void){
+    return gpio_pin_get_dt(&ENC2SW);
+}
+
+int get_enc1_dir(void){
+    return 0;
+}
+
+int get_enc2_dir(void){
+    return 0;
+}

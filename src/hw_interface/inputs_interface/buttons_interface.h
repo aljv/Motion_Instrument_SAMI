@@ -33,5 +33,41 @@ int ButtonsInit(void);
  */
 int EncodersInit(void);
 
+/**
+ * @brief Checks if ENC1 has been pressed
+ * 
+ * This function checks if encoder 1 switch has been triggered
+ * 
+ * @return boolean True if pressed, False otherwise
+ */
+bool get_enc1_sw(void);
+
+/**
+ * @brief Checks if ENC2 has been pressed
+ * 
+ * This function checks if ENC2 switch has been triggered
+ * 
+ * @return boolean True if pressed, False otherwise
+ */
+bool get_enc2_sw(void);
+
+/**
+ * @brief Checks direction of ENC1
+ * 
+ * This function checks the direction of ENC1
+ * 
+ * @return int 0 on CW, int 1 on CCW
+ */
+int get_enc1_dir(void);
+
+/**
+ * @brief Checks direction of ENC2
+ * 
+ * This function checks the direction of ENC2
+ * 
+ * @return int 0 on CW, int 1 on CCW
+ */
+int get_enc2_dir(void);
+
 
 #endif // VS1053_INTERFACE_H
