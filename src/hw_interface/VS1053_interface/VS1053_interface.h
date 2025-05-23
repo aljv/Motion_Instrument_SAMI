@@ -9,6 +9,12 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
+// for controlling SPI transfer between MCU and CODEC
+typedef enum {
+    SPI_DATA,
+    SPI_CTRL
+} spi_xfer_type_t;
+
 // VS1053 Function prototypes
 void VS1053Init(void);
 void VS1053UpdateVolume(int8_t volumeL, int8_t volumeR);
