@@ -19,6 +19,7 @@
 #include "hw_interface/sd_card_interface/sd_card_interface.h"
 #include "hw_interface/spi_interface.h"
 #include "hw_interface/i2c_interface.h"
+#include "hw_interface/inputs_interface/buttons_interface.h"
 
 #include <dk_buttons_and_leds.h>
 
@@ -32,7 +33,7 @@ LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
 int main(void)
 {
-    SDcardInit();
+    SDcardInit(); //Error here when attempting to run - see sd_card_interface.c
     dk_leds_init();
     dk_set_led_on(DK_LED1);
     LOG_INF("LED turned on");

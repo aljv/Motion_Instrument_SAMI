@@ -179,6 +179,27 @@
 	};
 };
 
+/{
+	aliases{
+		//Aliases for encoders - same as node labels
+		enc1sw = &ENC1SW_DB;
+		enc2sw = &ENC2SW_DB;
+		enc1a = &ENC1A;
+		enc2a = &ENC2A;
+		enc1b = &ENC1B;
+		enc2b = &ENC2B;
+		//Aliases for buttons - same as node labels
+		trig1 = &TRIG_1;
+		trig2 = &TRIG_2;
+		trig3 = &TRIG_3;
+		trig4 = &TRIG_4;
+		jb1 = &JB1_DB;
+		jb2 = &JB2_DB;
+		jb3 = &JB3_DB;
+		jb4 = &JB4_DB;
+	};
+};
+
 //Add LCD to i2c0
 &i2c0 {
     status = "okay";

@@ -2,5 +2,8 @@
     "nrf-connect.applications": [
         "${workspaceFolder}"
     ],
-    "files.autoSave": "off"
+    "files.autoSave": "off",
+    "files.associations": {
+        "diskio.h": "c"
+    }
 }
