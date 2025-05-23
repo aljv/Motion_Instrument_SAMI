@@ -15,29 +15,32 @@
 LOG_MODULE_REGISTER(MODULE);
 
 // Define pin numbers directly from the schematic
-#define VS_PIN_DREQ      56  // P1.04
-#define VS_PIN_RESET     57  // P1.06
-#define VS_PIN_CS        58  // P1.07
-#define VS_PIN_MOSI      6   // P1.13
-#define VS_PIN_MISO      7   // P1.14
-#define VS_PIN_SCK       8   // P1.15
+#define VS_PIN_DREQ      4  // P1.04
+#define VS_PIN_RESET     6  // P1.06
+#define VS_PIN_XCS       7  // P1.07
+#define VS_PIN_XDCS      5  // P0.05
+
 
 // SPI commands
 #define SCI_READ_FLAG 0x03
 #define SCI_WRITE_FLAG 0x02
 #define SDI_MAX_PACKET_LEN 256
 
-// Define GPIO device for controlling pins
-static const struct device *gpio_dev;
+// Node labels
+#define VS_SPI_DEVICE DT_NODELABEL(vs1053_spi)
+#define VS_DREQ_PIN DT_ALIAS(vsdreq)
+#define VS_RESET_PIN DT_ALIAS(vsreset)
+#define VS_MCS_PIN DT_ALIAS(vsmcs)
+#define VS_DCS_PIN DT_ALIAS(vsdcs)
 
-// Define SPI device for SPI0
-static const struct device *spi_dev;
+// Define GPIO specs - these must be static const and initialized at compile time
+static const struct gpio_dt_spec vs_gpio_dreq = GPIO_DT_SPEC_GET(VS_DREQ_PIN, gpios);
+static const struct gpio_dt_spec vs_gpio_reset = GPIO_DT_SPEC_GET(VS_RESET_PIN, gpios);
+static const struct gpio_dt_spec vs_gpio_mcs = GPIO_DT_SPEC_GET(VS_MCS_PIN, gpios);
+static const struct gpio_dt_spec vs_gpio_dcs = GPIO_DT_SPEC_GET(VS_DCS_PIN, gpios);
 
-// SPI configuration
-static struct spi_config spi_cfg = {
-    .frequency = 2000000,
-    .operation = (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
-};
+// Define SPI spec
+struct spi_dt_spec vs_spi_dev = SPI_DT_SPEC_GET(VS_SPI_DEVICE, SPIOP, 0);
 
 // VS1053 variables
 const uint16_t chipNumber[16] = {1001, 1011, 1011, 1003, 1053, 1033, 1063, 1103, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -50,10 +53,10 @@ const uint16_t chipNumber[16] = {1001, 1011, 1011, 1003, 1053, 1033, 1063, 1103,
 */
 void VS1053WriteSci(uint8_t addr, uint16_t data) {
     // Wait for DREQ to go high (chip is ready)
-    while(gpio_pin_get(gpio_dev, VS_PIN_DREQ) != 1);
+    while(gpio_pin_get_dt(&vs_gpio_dreq) != 1);
     
     // Activate the SCI CS pin (active low)
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 0);
+    gpio_pin_set_dt(&vs_gpio_mcs, 0);
     
     uint8_t tx_buf[VS1053_XFER_LEN_B] = {
         SCI_WRITE_FLAG, 
@@ -72,13 +75,13 @@ void VS1053WriteSci(uint8_t addr, uint16_t data) {
         .count = 1
     };
     
-    int ret = spi_write(spi_dev, &spi_cfg, &tx);
+    int ret = app_spi_write(&vs_spi_dev, &tx);
     if (ret != 0) {
-        LOG_ERR("SPI write error: %d", ret);
+        LOG_ERR("SCI write failed: %d", ret);
     }
     
     // Deactivate the SCI CS pin
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 1);
+    gpio_pin_set_dt(&vs_gpio_mcs, 1);
 }
 
 //< VS1053 Serial Control Interface Read
@@ -88,14 +91,14 @@ void VS1053WriteSci(uint8_t addr, uint16_t data) {
 */
 uint16_t VS1053ReadSci(uint8_t addr) {
     // Wait for DREQ to go high (chip is ready)
-    while(gpio_pin_get(gpio_dev, VS_PIN_DREQ) != 1);
+    while(gpio_pin_get_dt(&vs_gpio_dreq)!= 1);
     
     uint16_t res;
     uint8_t tx_buf[VS1053_XFER_LEN_B] = {SCI_READ_FLAG, addr, 0, 0};
     uint8_t rx_buf[VS1053_XFER_LEN_B] = {0};
   
     // Activate the SCI CS pin (active low)
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 0);
+    gpio_pin_set_dt(&vs_gpio_mcs, 0);
     
     struct spi_buf tx_bufs = {
         .buf = tx_buf,
@@ -117,14 +120,14 @@ uint16_t VS1053ReadSci(uint8_t addr) {
         .count = 1
     };
     
-    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    int ret = app_spi_transceive(&vs_spi_dev, &tx, &rx);
     if (ret != 0) {
-        LOG_ERR("SPI transceive error: %d", ret);
+        LOG_ERR("SCI read failed: %d", ret);
         return 0;
     }
     
     // Deactivate the SCI CS pin
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 1);
+    gpio_pin_set_dt(&vs_gpio_mcs, 1);
 
     res = (rx_buf[2] << 8); //load upper byte
     res += (rx_buf[3]); //load lower byte
@@ -141,10 +144,10 @@ int VS1053WriteSdi(const uint8_t *data, uint8_t len) {
         return -1;
         
     // Wait for DREQ to go high (chip is ready)
-    while(gpio_pin_get(gpio_dev, VS_PIN_DREQ) != 1);
+    while(gpio_pin_get_dt(&vs_gpio_dreq) != 1);
     
     // Activate the SDI CS pin (active low)
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 0);
+    gpio_pin_set_dt(&vs_gpio_dcs, 0);
     
     struct spi_buf tx_bufs = {
         .buf = (void *)data,
@@ -156,14 +159,14 @@ int VS1053WriteSdi(const uint8_t *data, uint8_t len) {
         .count = 1
     };
     
-    int ret = spi_write(spi_dev, &spi_cfg, &tx);
+    int ret = app_spi_write(&vs_spi_dev, &tx);
     if (ret != 0) {
-        LOG_ERR("SPI write error: %d", ret);
+        LOG_ERR("SDI write failed: %d", ret);
         return -1;
     }
     
     // Deactivate the SDI CS pin
-    gpio_pin_set(gpio_dev, VS_PIN_CS, 1);
+    gpio_pin_set_dt(&vs_gpio_dcs, 1);
 
     return 0;
 }
@@ -234,11 +237,11 @@ uint16_t VS1053ReadMem(uint16_t addr) {
 */
 uint8_t VS1053HardwareReset(void) {
     // Pull reset pin low
-    gpio_pin_set(gpio_dev, VS_PIN_RESET, 0);
+    gpio_pin_set_dt(&vs_gpio_reset, 0);
     k_msleep(10);
     
     // Release reset pin
-    gpio_pin_set(gpio_dev, VS_PIN_RESET, 1);
+    gpio_pin_set_dt(&vs_gpio_reset, 1);
     k_msleep(10);
 
     return 1;
@@ -297,42 +300,48 @@ void VS1053Init(void) {
     int ret;
     
     // Get GPIO device
-    gpio_dev = device_get_binding("GPIO_0");
-    if (!gpio_dev) {
-        LOG_ERR("GPIO device not found");
+
+    if (!gpio_is_ready_dt(&vs_gpio_dreq) && !gpio_is_ready_dt(&vs_gpio_reset) &&
+        !gpio_is_ready_dt(&vs_gpio_mcs) && !gpio_is_ready_dt(&vs_gpio_dcs)) 
+    {
+        LOG_ERR("1 or more GPIO devices not found");
         return;
     }
+
+
     
     // Get SPI device
-    spi_dev = device_get_binding("SPI_0");
-    if (!spi_dev) {
-        LOG_ERR("SPI device not found");
-        return;
-    }
+    app_spi_is_ready(&vs_spi_dev);
+    
     
     // Configure pins
     
-    // Configure reset pin as output (initially high)
-    ret = gpio_pin_configure(gpio_dev, VS_PIN_RESET, GPIO_OUTPUT_ACTIVE);
+    // Configure reset pins
+    ret = gpio_pin_configure_dt(&vs_gpio_dreq, GPIO_INPUT);
+    if (ret != 0) {
+        LOG_ERR("Error configuring dreq pin: %d", ret);
+        return;
+    }
+
+    ret = gpio_pin_configure_dt(&vs_gpio_reset, GPIO_OUTPUT_HIGH);
     if (ret != 0) {
         LOG_ERR("Error configuring reset pin: %d", ret);
         return;
     }
-    
-    // Configure DREQ pin as input
-    ret = gpio_pin_configure(gpio_dev, VS_PIN_DREQ, GPIO_INPUT);
+
+    ret = gpio_pin_configure_dt(&vs_gpio_mcs, GPIO_OUTPUT_HIGH);
     if (ret != 0) {
-        LOG_ERR("Error configuring DREQ pin: %d", ret);
+        LOG_ERR("Error configuring mcs pin: %d", ret);
+        return;
+    }
+
+    ret = gpio_pin_configure_dt(&vs_gpio_dcs, GPIO_OUTPUT_HIGH);
+    if (ret != 0) {
+        LOG_ERR("Error configuring dcs pin: %d", ret);
         return;
     }
     
-    // Configure CS pin as output (initially high/inactive)
-    ret = gpio_pin_configure(gpio_dev, VS_PIN_CS, GPIO_OUTPUT_ACTIVE);
-    if (ret != 0) {
-        LOG_ERR("Error configuring CS pin: %d", ret);
-        return;
-    }
-    
+
     // Reset and initialize the VS1053
     VS1053HardwareReset();
     VS1053SoftwareReset();

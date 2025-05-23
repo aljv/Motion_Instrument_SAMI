@@ -37,10 +37,6 @@ int main(void)
     dk_set_led_on(DK_LED1);
     LOG_INF("LED turned on");
 
-    VS1053HardwareReset();
-    VS1053SoftwareReset();
-
-
     while (1) {
         dk_set_led_off(DK_LED1);
         k_sleep(K_SECONDS(1));
