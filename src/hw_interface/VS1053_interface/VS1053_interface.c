@@ -66,10 +66,10 @@ void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_
     // Determine which chip select pin to use
     if(type == SPI_DATA) {
         chip_select = 1;
-        gpio_pin_set_dt(&vs_gpio_dcs, 0);
+        gpio_pin_set_dt(&vs_gpio_dcs, 1);
     } else if(type == SPI_CTRL) {
         chip_select = 0;
-        gpio_pin_set_dt(&vs_gpio_mcs, 0);
+        gpio_pin_set_dt(&vs_gpio_mcs, 1);
     } else {
         LOG_ERR("Invalid SPI transfer type");
         return; // Better than infinite loop
@@ -101,10 +101,11 @@ void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_
     spi_xfer_done = false;
     int err;
     
-    if(tx_dat != NULL && rx_dat != NULL) {
+    /*if(tx_dat != NULL && rx_dat != NULL) {
         // Bidirectional transfer
         err = spi_transceive_dt(&vs_spi_dev, &tx_buf_set, &rx_buf_set);
-    } else if(tx_dat != NULL) {
+        spi_xfer_done = true;
+    } else*/ if(tx_dat != NULL) {
         // Write-only transfer
         err = spi_write_dt(&vs_spi_dev, &tx_buf_set);
         spi_xfer_done = true; // No callback for write-only
@@ -131,11 +132,11 @@ void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_
 
     if(chip_select)
     {
-        gpio_pin_set_dt(&vs_gpio_dcs, 1);
+        gpio_pin_set_dt(&vs_gpio_dcs, 0);
     }
     else
     {
-        gpio_pin_set_dt(&vs_gpio_mcs, 1);
+        gpio_pin_set_dt(&vs_gpio_mcs, 0);
     }
     
 }
@@ -172,7 +173,7 @@ void VS1053WriteSci(uint8_t addr, uint16_t data) {
 uint16_t VS1053ReadSci(uint8_t addr) {
     // Wait for DREQ to go high (chip is ready) with timeout
    
-    while(!gpio_pin_get_dt(&vs_gpio_dreq)) {
+    while(gpio_pin_get_dt(&vs_gpio_dreq)) {
         k_sleep(K_USEC(1));
     }
     
@@ -187,7 +188,7 @@ uint16_t VS1053ReadSci(uint8_t addr) {
     // Combine the received bytes into 16-bit result
     uint16_t res = (rx_buf[2] << 8) | rx_buf[3];
     
-    LOG_DBG("SCI read addr 0x%02X: 0x%04X", addr, res);
+    LOG_INF("SCI read addr 0x%02X: 0x%04X", addr, res);
     return res;
 }
 
@@ -208,7 +209,7 @@ int VS1053WriteSdi(const uint8_t *data, uint8_t len) {
     }
         
     // Wait for DREQ to go high (chip is ready) with timeout
-    while(!gpio_pin_get_dt(&vs_gpio_dreq)) {
+    while(gpio_pin_get_dt(&vs_gpio_dreq)) {
         k_sleep(K_USEC(1));
     }
     
@@ -374,19 +375,19 @@ void VS1053Init(void) {
         return;
     }
 
-    ret = gpio_pin_configure_dt(&vs_gpio_reset, GPIO_OUTPUT_HIGH);
+    ret = gpio_pin_configure_dt(&vs_gpio_reset, GPIO_OUTPUT | GPIO_OUTPUT_HIGH);
     if (ret != 0) {
         LOG_ERR("Error configuring reset pin: %d", ret);
         return;
     }
 
-    ret = gpio_pin_configure_dt(&vs_gpio_mcs, GPIO_OUTPUT_HIGH);
+    ret = gpio_pin_configure_dt(&vs_gpio_mcs, GPIO_OUTPUT | GPIO_OUTPUT_HIGH);
     if (ret != 0) {
         LOG_ERR("Error configuring mcs pin: %d", ret);
         return;
     }
 
-    ret = gpio_pin_configure_dt(&vs_gpio_dcs, GPIO_OUTPUT_HIGH);
+    ret = gpio_pin_configure_dt(&vs_gpio_dcs, GPIO_OUTPUT | GPIO_OUTPUT_HIGH);
     if (ret != 0) {
         LOG_ERR("Error configuring dcs pin: %d", ret);
         return;
@@ -399,4 +400,72 @@ void VS1053Init(void) {
     VS1053SoftwareReset();
 
     LOG_INF("VS1053 Initialized");
+}
+
+// Alternative version that matches your original pattern more closely:
+uint16_t VS1053ReadSci_Debug(uint8_t addr) {
+    // Wait for DREQ with better timeout handling
+    while(gpio_pin_get_dt(&vs_gpio_dreq)) {
+        k_sleep(K_USEC(1));
+    }
+    
+    uint8_t tx_buf[4] = {SCI_READ_FLAG, addr, 0x00, 0x00};
+    uint8_t rx_buf[4] = {0};
+    
+    // Assert CS
+    gpio_pin_set_dt(&vs_gpio_mcs, 0);
+    k_sleep(K_USEC(1));
+    
+    // Prepare SPI buffers manually
+    struct spi_buf tx_spi_buf = {.buf = tx_buf, .len = 4};
+    struct spi_buf rx_spi_buf = {.buf = rx_buf, .len = 4};
+    struct spi_buf_set tx_set = {.buffers = &tx_spi_buf, .count = 1};
+    struct spi_buf_set rx_set = {.buffers = &rx_spi_buf, .count = 1};
+    
+    // Direct SPI call
+    int err = spi_transceive_dt(&vs_spi_dev, &tx_set, &rx_set);
+    if(err != 0) {
+        LOG_ERR("SPI transceive failed: %d", err);
+    }
+    
+    // Deassert CS
+    k_sleep(K_USEC(1));
+    gpio_pin_set_dt(&vs_gpio_mcs, 1);
+    
+    // Debug output
+    LOG_INF("TX: [0x%02X, 0x%02X, 0x%02X, 0x%02X]", 
+            tx_buf[0], tx_buf[1], tx_buf[2], tx_buf[3]);
+    LOG_INF("RX: [0x%02X, 0x%02X, 0x%02X, 0x%02X]", 
+            rx_buf[0], rx_buf[1], rx_buf[2], rx_buf[3]);
+    
+    uint16_t result = (rx_buf[2] << 8) | rx_buf[3];
+    LOG_INF("Combined result: 0x%04X", result);
+    
+    return result;
+}
+
+
+// Test function to verify SPI communication
+void VS1053TestSPI(void) {
+    LOG_INF("=== VS1053 SPI Communication Test ===");
+    VS1053HardwareReset();
+    
+    // Test 1: Check DREQ pin state
+    int dreq_state = gpio_pin_get_dt(&vs_gpio_dreq);
+    LOG_INF("DREQ pin state: %d", dreq_state);
+    
+    // Test 2: Try to read STATUS register
+    LOG_INF("Reading STATUS register (0x01)...");
+    uint16_t status = VS1053ReadSci_Debug(SCI_STATUS);
+    LOG_INF("STATUS: 0x%04X", status);
+    
+    // Test 3: Try to read MODE register  
+    LOG_INF("Reading MODE register (0x00)...");
+    uint16_t mode = VS1053ReadSci_Debug(SCI_MODE);
+    LOG_INF("MODE: 0x%04X", mode);
+    
+    // Test 4: Read version
+    LOG_INF("Reading version info...");
+    uint16_t version = ((status >> 4) & 15);
+    LOG_INF("Chip version: %d", version);
 }

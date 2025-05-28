@@ -269,7 +269,7 @@
 		compatible = "gpio-keys";
 
 		vs_dreq: vs_dreq_pin {
-			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 			label = "VS_DREQ";
 		};
 

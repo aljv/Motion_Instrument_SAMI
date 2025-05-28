@@ -26,5 +26,7 @@ uint16_t VS1053ReadMem(uint16_t addr);
 uint8_t VS1053HardwareReset(void);
 uint8_t VS1053SoftwareReset(void);
 void VS1053bLoadPlugin(const uint16_t *data, int len);
+uint16_t VS1053ReadSci_Debug(uint8_t addr);
+void VS1053TestSPI(void);
 
 #endif // VS1053_INTERFACE_H
