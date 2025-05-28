@@ -8,6 +8,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <string.h>
 
+#include "buttons_interface.h"
+
 #define MODULE buttons_interface
 LOG_MODULE_REGISTER(MODULE);
 
@@ -19,21 +21,21 @@ LOG_MODULE_REGISTER(MODULE);
 //Create gpio_dt_spec structs for each gpio pin
 //
 //Encoders
-static const struct gpio_dt_spec ENC1SW = GPIO_DT_SPEC_GET(DT_ALIAS(enc1sw), gpios);
-static const struct gpio_dt_spec ENC2SW = GPIO_DT_SPEC_GET(DT_ALIAS(enc2sw), gpios);
+const struct gpio_dt_spec ENC1SW = GPIO_DT_SPEC_GET(DT_ALIAS(enc1sw), gpios);
+const struct gpio_dt_spec ENC2SW = GPIO_DT_SPEC_GET(DT_ALIAS(enc2sw), gpios);
 static const struct gpio_dt_spec ENC1A = GPIO_DT_SPEC_GET(DT_ALIAS(enc1a), gpios);
 static const struct gpio_dt_spec ENC1B = GPIO_DT_SPEC_GET(DT_ALIAS(enc1b), gpios);
 static const struct gpio_dt_spec ENC2A = GPIO_DT_SPEC_GET(DT_ALIAS(enc2a), gpios);
 static const struct gpio_dt_spec ENC2B = GPIO_DT_SPEC_GET(DT_ALIAS(enc2b), gpios);
 //Buttons - note the change in name from TRIG & JB to BTN
-static const struct gpio_dt_spec BTN1 = GPIO_DT_SPEC_GET(DT_ALIAS(trig1), gpios);
-static const struct gpio_dt_spec BTN2 = GPIO_DT_SPEC_GET(DT_ALIAS(trig2), gpios);
-static const struct gpio_dt_spec BTN3 = GPIO_DT_SPEC_GET(DT_ALIAS(trig3), gpios);
-static const struct gpio_dt_spec BTN4 = GPIO_DT_SPEC_GET(DT_ALIAS(trig4), gpios);
-static const struct gpio_dt_spec BTN5 = GPIO_DT_SPEC_GET(DT_ALIAS(jb1), gpios);
-static const struct gpio_dt_spec BTN6 = GPIO_DT_SPEC_GET(DT_ALIAS(jb2), gpios);
-static const struct gpio_dt_spec BTN7 = GPIO_DT_SPEC_GET(DT_ALIAS(jb3), gpios);
-static const struct gpio_dt_spec BTN8 = GPIO_DT_SPEC_GET(DT_ALIAS(jb4), gpios);
+const struct gpio_dt_spec BTN1 = GPIO_DT_SPEC_GET(DT_ALIAS(trig1), gpios);
+const struct gpio_dt_spec BTN2 = GPIO_DT_SPEC_GET(DT_ALIAS(trig2), gpios);
+const struct gpio_dt_spec BTN3 = GPIO_DT_SPEC_GET(DT_ALIAS(trig3), gpios);
+const struct gpio_dt_spec BTN4 = GPIO_DT_SPEC_GET(DT_ALIAS(trig4), gpios);
+const struct gpio_dt_spec BTN5 = GPIO_DT_SPEC_GET(DT_ALIAS(jb1), gpios);
+const struct gpio_dt_spec BTN6 = GPIO_DT_SPEC_GET(DT_ALIAS(jb2), gpios);
+const struct gpio_dt_spec BTN7 = GPIO_DT_SPEC_GET(DT_ALIAS(jb3), gpios);
+const struct gpio_dt_spec BTN8 = GPIO_DT_SPEC_GET(DT_ALIAS(jb4), gpios);
 
 //global variables to hold current and previous state of encoders
 bool last_enc1_state;
@@ -41,12 +43,15 @@ bool curr_enc1_state;
 bool last_enc2_state;
 bool curr_enc2_state;
 
+//this variable holds the extrapolated encoder direction
+enum encoder_dir curr_encoder_dir;
+
 int ButtonsInit(void){
     if (!gpio_is_ready_dt(&BTN1)){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN1, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN1, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -55,7 +60,7 @@ int ButtonsInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN2, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN2, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -64,7 +69,7 @@ int ButtonsInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN3, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN3, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -73,7 +78,7 @@ int ButtonsInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN4, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN4, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -82,7 +87,7 @@ int ButtonsInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN5, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN5, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -91,7 +96,7 @@ int ButtonsInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&BTN6, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&BTN6, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -122,7 +127,7 @@ int EncodersInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&ENC1SW, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&ENC1SW, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -131,7 +136,7 @@ int EncodersInit(void){
         LOG_ERR("ENC1SW not ready\n");
         return -1;
     }
-    if (gpio_pin_configure_dt(&ENC2SW, GPIO_INPUT) != 0){
+    if (gpio_pin_configure_dt(&ENC2SW, GPIO_INPUT | GPIO_INT_EDGE_BOTH) != 0){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
@@ -171,6 +176,11 @@ int EncodersInit(void){
         LOG_ERR("Failed to configure ENC1SW as input\n");
         return -1;
     }
+
+    //Save current encoder states
+    curr_enc1_state = gpio_pin_get_dt(&ENC1A);
+    curr_enc2_state = gpio_pin_get_dt(&ENC2A);
+
     return 0;
 }
 
@@ -182,10 +192,32 @@ bool get_enc2_sw(void){
     return gpio_pin_get_dt(&ENC2SW);
 }
 
-int get_enc1_dir(void){
-    return 0;
+uint8_t get_enc1_dir(void){
+    curr_enc1_state = gpio_pin_get_dt(&ENC1A);
+    if (curr_enc1_state != last_enc1_state && curr_enc1_state == 0){
+        if(gpio_pin_get_dt(&ENC1B) != curr_enc1_state){
+            curr_encoder_dir = ENC_CW;
+        }else{
+            curr_encoder_dir = ENC_CCW;
+        }
+    }else{
+        curr_encoder_dir = ENC_BAD;
+    }
+    last_enc1_state = curr_enc1_state;
+    return curr_encoder_dir;
 }
 
-int get_enc2_dir(void){
-    return 0;
+uint8_t get_enc2_dir(void){
+    curr_enc2_state = gpio_pin_get_dt(&ENC2A);
+    if (curr_enc2_state != last_enc2_state && curr_enc2_state == 0){
+        if(gpio_pin_get_dt(&ENC2B) != curr_enc2_state){
+            curr_encoder_dir = ENC_CW;
+        }else{
+            curr_encoder_dir = ENC_CCW;
+        }
+    }else{
+        curr_encoder_dir = ENC_BAD;
+    }
+    last_enc2_state = curr_enc2_state;
+    return curr_encoder_dir;
 }
