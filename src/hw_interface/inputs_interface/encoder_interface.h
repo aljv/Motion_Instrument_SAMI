@@ -56,7 +56,7 @@ enum single_btn_play_modes
     PLAYBACK_SINGLE_LATCH = 0,
     PLAYBACK_SINGLE_MOMENTARY,
     PLAYBACK_SINGLE_PLAYPAUSE,
-    PLAYBACK_SINGLE_RHYTHM,
+    //PLAYBACK_SINGLE_RHYTHM, //pat note: rhythm removed from original SAMI
     PLAYBACK_SINGLE_NOTE,
     NUM_SINGLE_PLAYBACK, 
 };
