@@ -10,10 +10,9 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <bluetooth/gatt_dm.h>
 #include <bluetooth/scan.h>
-
+#include <bluetooth/services/hrs_client.h>
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/services/hrs.h>
-#include <bluetooth/services/hrs_client.h>
 
 #include "hw_interface/ble_interface/ble_interface.h"
 #include "hw_interface/sd_card_interface/sd_card_interface.h"
@@ -47,6 +46,7 @@ void ENC1_Handler(fsm_struct* fsm);
 void ENC2_Handler(fsm_struct* fsm);
 void UI_Handler(fsm_struct* fsm);
 void draw_all_UI(void);
+void updateVSvolume(void);
 //TODO - Someone: Write these functions somewhere in main
     //void play_track(struct midi_track* track_list, enum playback_states playbackState, uint32_t current_time);
     //void all_playback_notes_off(void);
@@ -140,6 +140,8 @@ fsm_struct fsm = {
     .low_bat_led = 0,
 };
 
+//Function to initialize 100ms app timer for 
+
 //Function to initialize all buttons/encoders and general purpose interrupt function
 void GPIO_Init(void)
 {
@@ -154,6 +156,12 @@ void GPIO_Init(void)
     err_code = EncodersInit();
     if (err_code != 0){
         LOG_INF("Failed to initialize encoders\n");
+        return;
+    }
+
+    err_code = PWR_LED_Init();
+    if (err_code != 0){
+        LOG_INF("Failed to initialize PWR LED\n");
         return;
     }
 
@@ -873,14 +881,25 @@ void draw_all_UI()
 //
 int main(void)
 {
+    LOG_INF("Start of main\n");
     GPIO_Init();
-    LOG_INF("GPIO INIT complete");
-    //SDcardInit(); //Error here when attempting to run - see sd_card_interface.c
+
+    //TESTING PURPOSES - This works (PWR LED is red)
+    LOG_INF("Setting PWR LED");
+    gpio_pin_set_dt(&PowerLED, 1);
+
+    //AppTimer_Init();
+    //AppTimer_Start();
+    //Saadc_Init();
+
+    CheckDevices();
+    SDcardInterfaceInit(); //Error here when attempting to run - see sd_card_interface.c
     dk_leds_init();
     dk_set_led_on(DK_LED1);
-    LOG_INF("LED turned on");
+    LOG_INF("LED turned on\n");
 
-    while (1) {
+    while (1)
+    {
         //dk_set_led_off(DK_LED1);
         //k_sleep(K_SECONDS(1));
 
@@ -905,9 +924,10 @@ int main(void)
             track_new = false;
         }
 
+        k_sleep(K_SECONDS(1));
+
     }
 
     return 0;
-
 }
 

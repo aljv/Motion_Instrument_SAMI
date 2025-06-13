@@ -16,6 +16,7 @@ target_sources(app PRIVATE
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/fs)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/zephyr/subsys/fs)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/../modules/fs/fatfs)
+target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/hw_interface)
 
 # APP SPECIFIC DIRECTORIES
 add_subdirectory(src/hw_interface)

@@ -28,6 +28,7 @@ extern const struct gpio_dt_spec BTN5;
 extern const struct gpio_dt_spec BTN6;
 extern const struct gpio_dt_spec BTN7;
 extern const struct gpio_dt_spec BTN8;
+extern const struct gpio_dt_spec PowerLED;
 
 enum encoder_dir {
     ENC_CW = 0,
@@ -89,5 +90,13 @@ uint8_t get_enc1_dir(void);
  */
 uint8_t get_enc2_dir(void);
 
+/**
+ * @brief Initialize PWR LED pin
+ * 
+ * This function initializes the Power LED pin
+ * 
+ * @return 0 on success, -1 on fail
+ */
+int PWR_LED_Init(void);
 
 #endif // BUTTONS_INTERFACE_H

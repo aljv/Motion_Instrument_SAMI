@@ -97,7 +97,7 @@
 
 /*
 *
-	TODO:	-Check if this (or any) parent node is required
+	TODO:	-Check if this parent node is required
 *
 */
 /{
@@ -106,9 +106,24 @@
 		};
 };
 
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>; //gpio0 3 (P0.03)
+		zephyr,resolution = <12>;
+	};
+};
+
 /*
 *
-	TODO:	- Add any debounce and set polling mode for any gpio node if required
+*	TODO:	- Add any debounce and set polling mode for any gpio node if required
 *	
 */
 //Create gpioPins parent node (layout copied from joystick2 code)
@@ -116,6 +131,11 @@
 	gpioPins {
 		compatible = "gpio-keys";
 		
+		//PWR LED pin
+		PWR_LED: PWR_LED {
+			gpios = <&gpio0 7 0>;
+			label = "PWR LED";
+		};
 		//Encoder pins
 		ENC1SW_DB: ENC1SW_DB {
 			gpios = <&gpio0 16 0>;
@@ -181,6 +201,9 @@
 
 /{
 	aliases{
+		//Aliases for Battery and Power LED
+		batsoc = &adc;
+		pwrled = &PWR_LED;
 		//Aliases for encoders - same as node labels
 		enc1sw = &ENC1SW_DB;
 		enc2sw = &ENC2SW_DB;
@@ -197,6 +220,9 @@
 		jb2 = &JB2_DB;
 		jb3 = &JB3_DB;
 		jb4 = &JB4_DB;
+		//Aliases for SD Card
+		sdcardspi = &sdc_spi;
+		sdcarddisk = &sdmmc;
 	};
 };
 
@@ -239,23 +265,48 @@
 *
 */
 //Add SD card slot to spi2
-&spi2 {
-
+/*&spi2 {
 	status = "okay";
 	pinctrl-0 = <&spi2_custom_default>;
 	pinctrl-1 = <&spi2_custom_sleep>;
-
 	pinctrl-names = "default", "sleep";
 
 	sdc_spi: sdc_spi@0 {
-		/*
-			TODO:	- Check "compatible" here, the commented out one could be better to use
-		*/
-		//compatible = "zephyr,sdhc-spi-slot"
+		//
+		//	TODO:	- Check "compatible" here
+		//
+		//compatible = "zephyr,spi-sd_card";
 		compatible = "spi-device";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
 		label = "SD Card slot";
+		cs-gpios = <&gpio0 11 0>; //only used in spi-device compatible
+	};
+
+};*/
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi2_custom_default>;
+	pinctrl-1 = <&spi2_custom_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	sdc_spi: sdc_spi@0 {
+		//
+		//	TODO:	- Check "compatible" here
+		//
+		//compatible = "zephyr,spi-sd_card";
+		//compatible = "spi-device";
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <200000>; //Lowered from 2000000
+		//label = "SD Card slot";
+		sdmmc: mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
 	};
 
 };
@@ -306,6 +357,9 @@
 	status = "disabled";
 };
 &led3 {
+	status = "disabled";
+};
+&uart0 {
 	status = "disabled";
 };
 &qspi {

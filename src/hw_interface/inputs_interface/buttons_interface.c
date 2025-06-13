@@ -36,6 +36,8 @@ const struct gpio_dt_spec BTN5 = GPIO_DT_SPEC_GET(DT_ALIAS(jb1), gpios);
 const struct gpio_dt_spec BTN6 = GPIO_DT_SPEC_GET(DT_ALIAS(jb2), gpios);
 const struct gpio_dt_spec BTN7 = GPIO_DT_SPEC_GET(DT_ALIAS(jb3), gpios);
 const struct gpio_dt_spec BTN8 = GPIO_DT_SPEC_GET(DT_ALIAS(jb4), gpios);
+//PWR LED pin
+const struct gpio_dt_spec PowerLED = GPIO_DT_SPEC_GET(DT_ALIAS(pwrled), gpios);
 
 //global variables to hold current and previous state of encoders
 bool last_enc1_state;
@@ -220,4 +222,16 @@ uint8_t get_enc2_dir(void){
     }
     last_enc2_state = curr_enc2_state;
     return curr_encoder_dir;
+}
+
+int PWR_LED_Init(void){
+    if (!gpio_is_ready_dt(&PowerLED)){
+        LOG_ERR("ENC1SW not ready\n");
+        return -1;
+    }
+    if (gpio_pin_configure_dt(&PowerLED, GPIO_OUTPUT_INACTIVE) != 0){
+        LOG_ERR("Failed to configure BATADC as input\n");
+        return -1;
+    }
+    return 0;
 }

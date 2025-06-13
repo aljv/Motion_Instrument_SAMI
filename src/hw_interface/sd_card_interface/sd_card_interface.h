@@ -9,9 +9,20 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/kernel.h>
+//TODO - Patrick: IMPORTANT. This name has to be changed to "state_machine.h"
+//                           when the file name is changed
+#include "inputs_interface/encoder_interface.h"
 
 // Use this as a guideline for your TODOs
+
+/**
+ * @brief Check for devices
+ * 
+ * This function checks the subsystem for all devices
+ * 
+ * @return int 0 on success, negative error code otherwise
+ */
+int CheckDevices(void);
 
 /**
  * @brief Initialize the SD card interface
@@ -34,7 +45,7 @@ int SDcardInit(void);
 /**
  * @brief Scan for MIDI files
  * 
- * This function scans the MIDI directory for .mid files.
+ * This function scans the MIDI directory for .midi files.
  * 
  * @return int Number of MIDI files found
  */
@@ -103,7 +114,7 @@ int read_midi(const char *file_name, uint8_t *buffer, size_t max_size);
  * @param fsm State machine
  * @return int 0 on success, negative error code otherwise
  */
-//int write_setting_txt(fsm_t *fsm);
+int write_setting_txt(fsm_struct *fsm);
 
 /**
  * @brief Read settings from a file
@@ -111,6 +122,6 @@ int read_midi(const char *file_name, uint8_t *buffer, size_t max_size);
  * @param fsm State machine
  * @return int 0 on success, negative error code otherwise
  */
-//int read_settings_txt(fsm_t *fsm);
+int read_settings_txt(fsm_struct *fsm);
 
 #endif // SDCARD_INTERFACE_H
