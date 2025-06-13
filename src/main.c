@@ -37,8 +37,9 @@ int main(void)
     dk_set_led_on(DK_LED1);
     LOG_INF("LED turned on");
 
-    //VS1053Init();
-    VS1053TestSPI();
+    VS1053Init();
+    vs1053_register_test_suite();
+    //VS1053TestSPI();
 
     while (1) {
         dk_set_led_off(DK_LED1);
