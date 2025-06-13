@@ -29,5 +29,8 @@ void VS1053bLoadPlugin(const uint16_t *data, int len);
 uint16_t VS1053ReadSci_Debug(uint8_t addr);
 void VS1053TestSPI(void);
 void vs1053_register_test_suite(void);
+void setup_vs1053_midi_mode(void);
+
+void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_t len);
 
 #endif // VS1053_INTERFACE_H

@@ -773,6 +773,27 @@ void VS1053Init(void) {
     LOG_INF("VS1053 initialization completed successfully!");
 }
 
+// VS1053 MIDI Mode Setup
+void setup_vs1053_midi_mode(void) {
+    LOG_INF("=== Setting up VS1053 for MIDI playback ===");
+
+    // Make sure VS1053 is ready
+    if (!gpio_pin_get_dt(&vs_gpio_dreq)) {
+        LOG_ERR("VS1053 not ready (DREQ low)");
+        return;
+    }
+
+    // Set volume to a reasonable level (your VS1053UpdateVolume function)
+    VS1053UpdateVolume(20, 20);  // -10dB on both channels
+    k_msleep(100);
+
+    // Read and display current mode
+    uint16_t mode = VS1053ReadSci(SCI_MODE);
+    LOG_INF("Current MODE register: 0x%04X", mode);
+
+    // The VS1053 should already be in the right mode from initialization
+    LOG_INF("VS1053 MIDI mode setup complete");
+}
 
 // Alternative version that matches your original pattern more closely:
 /*uint16_t VS1053ReadSci_Debug(uint8_t addr) {

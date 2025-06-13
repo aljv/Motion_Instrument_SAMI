@@ -20,6 +20,7 @@
 #include "hw_interface/VS1053_interface/VS1053_interface.h"
 #include "hw_interface/spi_interface.h"
 #include "hw_interface/i2c_interface.h"
+#include "hw_interface/VS1053_interface/midi.h"
 
 #include <dk_buttons_and_leds.h>
 
@@ -39,6 +40,13 @@ int main(void)
 
     VS1053Init();
     vs1053_register_test_suite();
+    k_msleep(2000);
+    setup_vs1053_midi_mode();
+    k_msleep(2000);
+
+    // Run MIDI tests
+    LOG_INF("Starting MIDI playback tests...");
+    run_midi_tests();
 
     while (1) {
         dk_set_led_off(DK_LED1);
