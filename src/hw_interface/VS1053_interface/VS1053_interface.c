@@ -427,31 +427,6 @@ void debug_device_tree(void) {
             vs_gpio_dcs.port, vs_gpio_dcs.pin, vs_gpio_dcs.dt_flags);
 }
 
-void test_mcs_pin(void) {
-    LOG_INF("=== MCS Pin Test (Fixed) ===");
-    
-    // Test the logical state (accounting for ACTIVE_LOW)
-    LOG_INF("Setting MCS to INACTIVE (HIGH logically, but pin may be LOW if ACTIVE_LOW)");
-    gpio_pin_set_dt(&vs_gpio_mcs, 0);  // 0 = inactive for ACTIVE_LOW pin
-    k_msleep(10);
-    LOG_INF("MCS logical state: %d, raw pin: %d", 
-            gpio_pin_get_dt(&vs_gpio_mcs),
-            gpio_pin_get_raw(vs_gpio_mcs.port, vs_gpio_mcs.pin));
-    
-    LOG_INF("Setting MCS to ACTIVE (LOW logically)"); 
-    gpio_pin_set_dt(&vs_gpio_mcs, 1);  // 1 = active for ACTIVE_LOW pin
-    k_msleep(10);
-    LOG_INF("MCS logical state: %d, raw pin: %d", 
-            gpio_pin_get_dt(&vs_gpio_mcs),
-            gpio_pin_get_raw(vs_gpio_mcs.port, vs_gpio_mcs.pin));
-    
-    LOG_INF("Setting MCS back to INACTIVE");
-    gpio_pin_set_dt(&vs_gpio_mcs, 0);  // Back to inactive
-    k_msleep(10);
-    LOG_INF("MCS logical state: %d, raw pin: %d", 
-            gpio_pin_get_dt(&vs_gpio_mcs),
-            gpio_pin_get_raw(vs_gpio_mcs.port, vs_gpio_mcs.pin));
-}
 
 void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_t len)
 {
@@ -468,9 +443,7 @@ void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_
     if(type == SPI_DATA) {
         gpio_pin_set_dt(&vs_gpio_dcs, 0);  // Assert DCS (active low)
     } else if(type == SPI_CTRL) {
-        LOG_INF("Before MCS assert: MCS=%d", gpio_pin_get_dt(&vs_gpio_mcs));
         gpio_pin_set_dt(&vs_gpio_mcs, 0);  // Assert MCS
-        LOG_INF("After MCS assert: MCS=%d", gpio_pin_get_dt(&vs_gpio_mcs));
     } else {
         LOG_ERR("Invalid SPI transfer type");
         return;

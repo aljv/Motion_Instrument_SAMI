@@ -39,7 +39,6 @@ int main(void)
 
     VS1053Init();
     vs1053_register_test_suite();
-    //VS1053TestSPI();
 
     while (1) {
         dk_set_led_off(DK_LED1);
