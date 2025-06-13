@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "i2c_interface.h"
+#include "VS1053_interface/VS1053_interface.h"
 
 #define MODULE i2c_interface
 #include <zephyr/logging/log.h>
@@ -12,6 +13,17 @@ LOG_MODULE_REGISTER(MODULE);
 #define LCD_I2C_NODE DT_NODELABEL(lcd)
 
 static struct i2c_dt_spec dev_lcd_i2c = I2C_DT_SPEC_GET(LCD_I2C_NODE);
+
+// GPIO definitions for audio amplifier control (if needed)
+#define AMP_MUTE_NODE DT_ALIAS(ampmute)
+#define AMP_MAX_MUTE_NODE DT_ALIAS(ampmaxmute)
+#define AMP_MAX_SHDN_NODE DT_ALIAS(ampmaxshdn)
+
+static const struct gpio_dt_spec amp_mute = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_mute), gpios);
+static const struct gpio_dt_spec amp_max_mute = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_max_mute), gpios);
+static const struct gpio_dt_spec amp_max_shdn = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_max_shdn), gpios);
+
+static uint8_t current_amp_volume = DEFAULT_AMP_VOL;
 
 // TODOS 
 // Add all LCD code from SAMI NRF SDK app.
@@ -41,7 +53,7 @@ void i2c_lcd_transmit(uint8_t buf)
         }
         else
         {
-                LOG_INF("Successfully wrote to I2C device");
+                LOG_DBG("Successfully wrote to I2C LCD device");
         }
 
         return;
@@ -57,7 +69,7 @@ void i2c_lcd_read(uint8_t buf)
         }
         else
         {
-                LOG_INF("Successfully read from I2C device");
+                LOG_DBG("Successfully read from I2C LCD device");
         }
 
         return;
@@ -120,4 +132,161 @@ void ser_lcd_init(void)
 
     i2c_lcd_transmit(SerLCD_SETTING_MODE);   
     i2c_lcd_transmit(SerLCD_DISPLAY_CLEAR);
+}
+
+/*** Audio Amplifier MAX9744 Functions ***/
+
+void max9744_init(void)
+{
+        // Initialize the audio amplifier with default volume
+        LOG_INF("Initializing MAX9744 audio amplifier");
+        max9744_set_volume(DEFAULT_AMP_VOL);
+}
+
+void max9744_set_volume(uint8_t volume)
+{
+        // Clamp volume to valid range
+        if(volume > MAXIMUM_AMP_VOL)
+        {
+                volume = MAXIMUM_AMP_VOL;
+                LOG_WRN("Volume clamped to maximum: %d", MAXIMUM_AMP_VOL);
+        }
+
+        // Create I2C message for audio amplifier
+        uint8_t msg_buf[2];
+        struct i2c_msg msgs[1];
+
+        msg_buf[0] = volume;
+        
+        msgs[0].buf = msg_buf;
+        msgs[0].len = 1;
+        msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+        int ret = i2c_transfer(dev_lcd_i2c.bus, msgs, 1, AUDIO_AMP_ADDR);
+
+        if(ret != 0)
+        {
+                LOG_ERR("Failed to write to audio amplifier at address 0x%02x (error: %d)", 
+                        AUDIO_AMP_ADDR, ret);
+                return;
+        }
+        else
+        {
+                current_amp_volume = volume;
+                LOG_INF("Audio amplifier volume set to: %d", volume);
+        }
+}
+
+uint8_t max9744_get_volume(void)
+{
+        return current_amp_volume;
+}
+
+void max9744_mute(void)
+{
+        LOG_INF("Muting audio amplifier");
+        max9744_set_volume(MIN_AMP_VOL);
+}
+
+void max9744_unmute(void)
+{
+        LOG_INF("Unmuting audio amplifier");
+        // Restore to default volume if currently muted, otherwise keep current volume
+        if(current_amp_volume == MIN_AMP_VOL)
+        {
+                max9744_set_volume(DEFAULT_AMP_VOL);
+        }
+}
+
+int audio_amplifier_gpio_init(void)
+{
+        int ret;
+
+        // Initialize MUTE pin
+        if (!gpio_is_ready_dt(&amp_mute)) {
+                LOG_ERR("Audio amplifier MUTE GPIO not ready");
+                return -ENODEV;
+        }
+        
+        ret = gpio_pin_configure_dt(&amp_mute, GPIO_OUTPUT_INACTIVE);
+        if (ret < 0) {
+                LOG_ERR("Cannot configure audio amplifier MUTE GPIO (%d)", ret);
+                return ret;
+        }
+
+        // Initialize MAX_MUTE pin
+        if (!gpio_is_ready_dt(&amp_max_mute)) {
+                LOG_ERR("Audio amplifier MAX_MUTE GPIO not ready");
+                return -ENODEV;
+        }
+        
+        ret = gpio_pin_configure_dt(&amp_max_mute, GPIO_OUTPUT_INACTIVE);
+        if (ret < 0) {
+                LOG_ERR("Cannot configure audio amplifier MAX_MUTE GPIO (%d)", ret);
+                return ret;
+        }
+
+        // Initialize MAX_SHDN pin (active low for shutdown, so start with high to enable)
+        if (!gpio_is_ready_dt(&amp_max_shdn)) {
+                LOG_ERR("Audio amplifier MAX_SHDN GPIO not ready");
+                return -ENODEV;
+        }
+        
+        ret = gpio_pin_configure_dt(&amp_max_shdn, GPIO_OUTPUT_ACTIVE);
+        if (ret < 0) {
+                LOG_ERR("Cannot configure audio amplifier MAX_SHDN GPIO (%d)", ret);
+                return ret;
+        }
+
+        LOG_INF("Audio amplifier GPIO pins initialized");
+        return 0;
+}
+
+void audio_amplifier_hardware_enable(void)
+{
+        // Ensure amplifier is not in shutdown mode
+        gpio_pin_set_dt(&amp_max_shdn, 1);
+        
+        // Ensure amplifier is not muted via GPIO
+        gpio_pin_set_dt(&amp_mute, 0);
+        gpio_pin_set_dt(&amp_max_mute, 0);
+        
+        LOG_INF("Audio amplifier hardware enabled");
+}
+
+void audio_amplifier_hardware_disable(void)
+{
+        // Mute the amplifier
+        gpio_pin_set_dt(&amp_mute, 1);
+        gpio_pin_set_dt(&amp_max_mute, 1);
+        
+        // Put amplifier in shutdown mode
+        gpio_pin_set_dt(&amp_max_shdn, 0);
+        
+        LOG_INF("Audio amplifier hardware disabled");
+}
+
+void test_audio_amplifier(void)
+{
+        LOG_INF("Testing audio amplifier volume control...");
+        
+        // Test different volume levels
+        uint8_t test_volumes[] = {10, 20, 30, 40, 50, 45}; // End with default volume
+        
+        for (int i = 0; i < ARRAY_SIZE(test_volumes); i++) {
+                LOG_INF("Setting volume to: %d", test_volumes[i]);
+                max9744_set_volume(test_volumes[i]);
+                k_sleep(K_SECONDS(2));
+        }
+        
+        // Test mute/unmute
+        LOG_INF("Testing mute function");
+        max9744_mute();
+        k_sleep(K_SECONDS(2));
+        
+        LOG_INF("Testing unmute function");
+        max9744_unmute();
+        k_sleep(K_SECONDS(1));
+        
+        LOG_INF("Audio amplifier test completed");
 }

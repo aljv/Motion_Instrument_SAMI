@@ -36,8 +36,31 @@ int main(void)
 {
     dk_leds_init();
     dk_set_led_on(DK_LED1);
-    LOG_INF("LED turned on");
 
+    int ret;
+        
+    LOG_INF("Starting SAMI Motion Instrument application");
+        
+    // Initialize I2C interface
+    LOG_INF("Initializing I2C interface...");
+    i2c_interface_init();
+        
+    // Initialize audio amplifier GPIO control pins
+    LOG_INF("Initializing audio amplifier GPIO...");
+    ret = audio_amplifier_gpio_init();
+    if (ret < 0) {
+        LOG_ERR("Failed to initialize audio amplifier GPIO");
+        return ret;
+    }
+        
+    // Enable audio amplifier hardware
+    audio_amplifier_hardware_enable();
+        
+    // Initialize audio amplifier via I2C
+    LOG_INF("Initializing MAX9744 audio amplifier...");
+    max9744_init();
+
+    LOG_INF("Initializing VS1053 codec...");
     VS1053Init();
     vs1053_register_test_suite();
     k_msleep(2000);

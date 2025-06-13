@@ -18,7 +18,7 @@
 				- SD Card slot			done
 				- LCD					done
 				- Volume pot.			incomplete
-				- Audio amp.			incomplete
+				- Audio amp.			done
 				- Encoder/switch jacks	done
 				- Bat. monitoring/LED	incomplete
 				- Crystal pins			incomplete
@@ -51,7 +51,7 @@
 	//Volume potentiometer input pin (1 pin)
 	V_CTRL-gpios = <&gpio0 4 0>;
 
-	//Audio amp pins (3 pins)
+	//Audio amp pins (3 pins) - Now handled via I2C, but GPIO pins available for MUTE/SHDN if needed
 	MUTE-gpios = <&gpio0 10 0>;
 	MAX_MUTE-gpios = <&gpio0 29 0>;
 	MAX_SHDN-gpios = <&gpio0 31 0>;
@@ -179,7 +179,7 @@
 	};
 };
 
-//Add LCD to i2c0
+//Add LCD and Audio Amplifier to i2c0
 &i2c0 {
     status = "okay";
 
@@ -187,6 +187,12 @@
         compatible = "i2c-device";
         reg = <0x72>;
         label = "SAMI_LCD";
+    };
+
+    audio_amp: audio_amp@49{
+        compatible = "i2c-device";
+        reg = <0x49>;
+        label = "MAX9744_Audio_Amp";
     };
 
 };
@@ -290,12 +296,37 @@
 	};
 };
 
+// Audio Amplifier GPIO control pins (optional)
+/ {
+	audio_amp_gpios {
+		compatible = "gpio-leds";
+
+		amp_mute: amp_mute_pin {
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			label = "AMP_MUTE";
+		};
+
+		amp_max_mute: amp_max_mute_pin {
+			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			label = "AMP_MAX_MUTE";
+		};
+
+		amp_max_shdn: amp_max_shdn_pin {
+			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+			label = "AMP_MAX_SHDN";
+		};
+	};
+};
+
 / {
 	aliases {
         vsdreq = &vs_dreq;
         vsreset = &vs_reset;
 		vsmcs = &vs_mcs;
 		vsdcs = &vs_dcs;
+		ampmute = &amp_mute;
+		ampmaxmute = &amp_max_mute;
+		ampmaxshdn = &amp_max_shdn;
     };
 };
 
