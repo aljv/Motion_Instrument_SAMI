@@ -3,7 +3,10 @@
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 
-#define PLAYMODE_DISPLAY_AREA_LENGTH    10
+//TODO - SOMEONE: Once this file name is changed this must be replaced
+#include "inputs_interface/encoder_interface.h"
+
+#define INPUT_MODE_DISPLAY_AREA_LENGTH    10
 #define INSTRUMENT_DISPLAY_AREA_LENGTH  2
 #define TRACK_DISPLAY_AREA_LENGTH       2
 #define TEMPO_DISPLAY_AREA_LENGTH       3
@@ -98,4 +101,13 @@ void i2c_lcd_read(uint8_t buf);
 void i2c_lcd_set_cursor(uint8_t c, uint8_t l);
 
 void ser_lcd_write_string(unsigned char *str, size_t len);
+void ser_lcd_write_int(int n);
 void ser_lcd_init(void);
+
+void i2c_lcd_draw_input(enum input_modes input_mode);
+void i2c_lcd_draw_playback(enum input_modes input_mode, play_modes_struct play_mode);
+void i2c_lcd_draw_track(uint8_t track);
+//TODO - Uncomment this function once midi file is written
+//void i2c_lcd_draw_key(music_key_enum key);
+void i2c_lcd_draw_instrument(uint8_t instr);
+void i2c_lcd_draw_tempo(uint16_t tempo);
