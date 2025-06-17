@@ -444,9 +444,8 @@ void ENC1_Handler(fsm_struct* fsm)
         switch(fsm->settings_menu.music_settings)
         {
             case SET_TRACK:
-                //TODO - Alex: Replace this with lcd blackout and draw functions - not written yet
-                //i2c_lcd_clear();
-                //i2c_lcd_draw_track(fsm->current_track);
+                i2c_lcd_clear();
+                i2c_lcd_draw_track(fsm->current_track);
 
                 //Stay changing track until encoder1 pressed again
                 while (fsm->settings_menu.music_settings == SET_TRACK)
@@ -468,8 +467,7 @@ void ENC1_Handler(fsm_struct* fsm)
 
                             LOG_INF("Track CW\n");
                             LOG_INF("%d_Track.mid selected\n", fsm->current_track);
-                            //TODO - Alex: Replace this with lcd write function - not written yet
-                            //i2c_lcd_draw_track(fsm->current_track);
+                            i2c_lcd_draw_track(fsm->current_track);
 
                             //If new song is selected, update key and tempo
                             if (fsm->current_track != fsm->previous_track)
@@ -496,8 +494,7 @@ void ENC1_Handler(fsm_struct* fsm)
 
                             LOG_INF("Track CW\n");
                             LOG_INF("%d_Track.mid selected\n", fsm->current_track);
-                            //TODO - Alex: Replace this with lcd write functions - not written yet
-                            //i2c_lcd_draw_track(fsm->current_track);
+                            i2c_lcd_draw_track(fsm->current_track);
 
                             //If new song is selected, update key and tempo
                             if (fsm->current_track != fsm->previous_track)
@@ -517,9 +514,8 @@ void ENC1_Handler(fsm_struct* fsm)
                 break;
 
             case SET_INSTRUMENT:
-                //TODO - Alex: Replace this with lcd blackout function and lcd write function - not written yet
-                //i2c_lcd_clear();
-                //i2c_lcd_draw_instrument(fsm->instrument);
+                i2c_lcd_clear();
+                i2c_lcd_draw_instrument(fsm->instrument);
 
                 //Stay changing instrument until encoder1 pressed again
                 while(fsm->settings_menu.music_settings == SET_INSTRUMENT)
@@ -538,8 +534,7 @@ void ENC1_Handler(fsm_struct* fsm)
                                 fsm->instrument = MAX_INSTRUMENTS;
                             }
                             LOG_INF("Instrument CW\n");
-                            //TODO - Alex: Replace this with lcd blackout function and lcd write function - not written yet
-                            //i2c_lcd_draw_instrument(fsm->instrument);
+                            i2c_lcd_draw_instrument(fsm->instrument);
                             break;
                         
                         case ENC_CCW:
@@ -553,8 +548,7 @@ void ENC1_Handler(fsm_struct* fsm)
                                 fsm->instrument = MAX_INSTRUMENTS;
                             }
                             LOG_INF("Instrument CCW\n");
-                            //TODO - Alex: Replace this with lcd blackout function and lcd write function - not written yet
-                            //i2c_lcd_draw_instrument(fsm->instrument);
+                            i2c_lcd_draw_instrument(fsm->instrument);
                             break;
                     }
                 }
@@ -563,9 +557,8 @@ void ENC1_Handler(fsm_struct* fsm)
                 break;
 
             case SET_TEMPO:
-                //TODO - Alex: Replace this with lcd blackout function and lcd write functions - not written yet
-                //i2c_lcd_clear();
-                //i2c_lcd_draw_tempo(fsm->tempo);
+                i2c_lcd_clear();
+                i2c_lcd_draw_tempo(fsm->tempo);
 
                 //Stay changing tempo until encoder1 pressed again
                 while (fsm->settings_menu.music_settings == SET_TEMPO)
@@ -585,9 +578,7 @@ void ENC1_Handler(fsm_struct* fsm)
                             }
 
                             LOG_INF("Tempo CW\n");
-                            
-                            //TODO - Alex: Replace this with lcd write function - not written yet
-                            //i2c_lcd_draw_tempo(fsm->tempo);
+                            i2c_lcd_draw_tempo(fsm->tempo);
                             break;
                         
                         case ENC_CCW:
@@ -602,9 +593,7 @@ void ENC1_Handler(fsm_struct* fsm)
                             }
 
                             LOG_INF("Tempo CW\n");
-                            
-                            //TODO - Alex: Replace this with lcd write function - not written yet
-                            //i2c_lcd_draw_tempo(fsm->tempo);
+                            i2c_lcd_draw_tempo(fsm->tempo);
                             break;
                     }
                 }
@@ -627,9 +616,8 @@ void ENC2_Handler(fsm_struct* fsm)
         switch (fsm->settings_menu.operation_settings)
         {
             case INPUT_MENU:
-                //TODO - Alex: Replace this with lcd blackout and draw functions - not written yet
-                //i2c_lcd_clear();
-                //i2c_lcd_draw_input(fsm->input_mode);
+                i2c_lcd_clear();
+                i2c_lcd_draw_input(fsm->input_mode);
                 //arp_stop();   //Pat note: again don't know what this is, copied from old SAMI, don't think we need it
 
                 while (fsm->settings_menu.operation_settings == INPUT_MENU)
@@ -651,8 +639,7 @@ void ENC2_Handler(fsm_struct* fsm)
                             track_new = true;
                             LOG_INF("Input CW\n");
 
-                            //TODO - Alex: Replace this with lcd blackout and draw functions - not written yet
-                            //i2c_lcd_draw_input(fsm->input_mode);
+                            i2c_lcd_draw_input(fsm->input_mode);
                             break;
                         
                         case ENC_CCW:
@@ -669,8 +656,7 @@ void ENC2_Handler(fsm_struct* fsm)
                             track_new = true;
                             LOG_INF("Input CCW\n");
 
-                            //TODO - Alex: Replace this with lcd draw function - not written yet
-                            //i2c_lcd_draw_input(fsm->input_mode);
+                            i2c_lcd_draw_input(fsm->input_mode);
                             break;
                     }
                 }
@@ -678,9 +664,8 @@ void ENC2_Handler(fsm_struct* fsm)
                 break;
             
             case PLAYBACK_MENU:
-                //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                //i2c_lcd_clear();
-                //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                i2c_lcd_clear();
+                i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
                 //arp_stop();   //Pat note: again don't know what this is, copied from old SAMI, don't think we need it
 
                 switch (fsm->input_mode)
@@ -703,8 +688,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("Single Btn CW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
 
                                     break;
                                 
@@ -720,8 +704,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("Single Btn CCW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
 
                                     break; 
                             }
@@ -746,8 +729,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("Multi Btn CW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
 
                                     break;
                                 
@@ -763,8 +745,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("Multi Btn CCW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
 
                                     break; 
                             }
@@ -789,8 +770,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("BLE CW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
                                     break;
                                 
                                 case ENC_CCW:
@@ -805,8 +785,7 @@ void ENC2_Handler(fsm_struct* fsm)
                                     }
 
                                     LOG_INF("BLE CCW\n");
-                                    //TODO - Alex: Replace this with lcd blackout and write functions - not written yet
-                                    //i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
+                                    i2c_lcd_draw_playback(fsm->input_mode, fsm->play_mode);
                                     break; 
                             }
                         }
@@ -835,8 +814,7 @@ void UI_Handler(fsm_struct* fsm)
 {
     if (fsm->screen_blackout_entry)
     {
-        //TODO - Alex: Replace this with lcd clear function - not written yet
-        //i2c_lcd_clear();
+        i2c_lcd_clear();
         fsm->screen_blackout_entry = false;
     }
     else if (fsm->draw_ui_entry)
@@ -851,27 +829,27 @@ void UI_Handler(fsm_struct* fsm)
 //Function to draw all LCD information
 void draw_all_UI()
 {
-    //TODO - ALEX: Replace all commented out function with LCD writing functions
-    //             none written yet
 
     //Delay 50microseconds, k_busy_wait should not interrupt bluetooth code functionality
     k_busy_wait(50);
-    //i2c_lcd_draw_input(fsm.input_mode);
+    i2c_lcd_draw_input(fsm.input_mode);
 
     k_busy_wait(50);
-    //i2c_lcd_draw_playback(fsm.input_mode, fsm.play_mode);
+    i2c_lcd_draw_playback(fsm.input_mode, fsm.play_mode);
 
     k_busy_wait(50);
-    //i2c_lcd_draw_song(fsm.current_track);
+    i2c_lcd_draw_track(fsm.current_track);
 
     k_busy_wait(50);
+    //TODO - Someone: Once note_generator file is written, replace below function
+    //                with draw_key from i2c_interface.c
     //i2c_lcd_draw_key(fsm.key);
 
     k_busy_wait(50);
-    //i2c_lcd_draw_instrument(fsm.instrument);
+    i2c_lcd_draw_instrument(fsm.instrument);
 
     k_busy_wait(50);
-    //i2c_lcd_draw_tempo(fsm.tempo);
+    i2c_lcd_draw_tempo(fsm.tempo);
 
     k_busy_wait(50);
 }
@@ -884,6 +862,17 @@ int main(void)
     LOG_INF("Start of main\n");
     GPIO_Init();
 
+    //TESTING PURPOSES - Set initial state of fsm settings
+    //                   since SD card isn't working yet
+    fsm.input_mode = PLAYMODE_SINGLE_BTN;
+    fsm.play_mode.single_btn_play_mode = PLAYBACK_SINGLE_LATCH;
+    fsm.play_mode.multi_btn_play_mode = PLAYBACK_MULTI_NOTE;
+    fsm.play_mode.ble_play_mode = PLAYBACK_BLE_0;
+    fsm.playback_state = PLAYBACK_STOP;
+    fsm.current_track = 1;
+    fsm.instrument = 12;
+    fsm.tempo = 120;
+
     //TESTING PURPOSES - This works (PWR LED is red)
     LOG_INF("Setting PWR LED");
     gpio_pin_set_dt(&PowerLED, 1);
@@ -894,6 +883,10 @@ int main(void)
 
     CheckDevices();
     SDcardInterfaceInit(); //Error here when attempting to run - see sd_card_interface.c
+
+    //TESTING PURPOSES - All draw functions EXCEPT draw_key working
+    draw_all_UI();
+
     dk_leds_init();
     dk_set_led_on(DK_LED1);
     LOG_INF("LED turned on\n");

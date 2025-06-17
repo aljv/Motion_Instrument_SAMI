@@ -256,6 +256,14 @@ void i2c_lcd_draw_tempo(uint16_t tempo)
         }
 }
 
+void i2c_lcd_clear()
+{
+        i2c_lcd_set_cursor(0,0);
+        ser_lcd_write_string(" ", 16);
+        i2c_lcd_set_cursor(0,1);
+        ser_lcd_write_string(" ", 16);
+}
+
 void ser_lcd_init(void)
 {
     uint8_t _displayControl = SerLCD_DISPLAYON | SerLCD_CURSOROFF | SerLCD_BLINKOFF;
