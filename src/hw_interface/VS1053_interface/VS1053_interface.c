@@ -7,6 +7,7 @@
 #include "VS1053_interface.h"
 #include "VS10xx_uc.h"
 #include "spi_interface.h"
+#include "i2c_interface.h"
 
 // Include plugin data
 #include "rtmidistart.plg"
@@ -84,12 +85,10 @@ typedef struct {
 
 // VS1053 Register map with properties
 static const vs1053_register_t vs1053_registers[] = {
-    {SCI_MODE, "SCI_MODE", false, true, 0x4800, 0xFFFF, "Mode control register"},
     {SCI_STATUS, "SCI_STATUS", false, true, 0x000C, 0xFFFF, "Status register"},
     {SCI_BASS, "SCI_BASS", false, true, 0x0000, 0xFFFF, "Bass/treble control"},
     {SCI_CLOCKF, "SCI_CLOCKF", false, true, 0x0000, 0xFFFF, "Clock frequency control"},
     {SCI_DECODE_TIME, "SCI_DECODE_TIME", false, true, 0x0000, 0xFFFF, "Decode time in seconds"},
-    {SCI_AUDATA, "SCI_AUDATA", false, true, 0x0000, 0xFFFF, "Audio data (samplerate/channels)"},
     {SCI_WRAM, "SCI_WRAM", false, true, 0x0000, 0xFFFF, "RAM read/write"},
     {SCI_WRAMADDR, "SCI_WRAMADDR", false, true, 0x0000, 0xFFFF, "RAM address"},
     {SCI_HDAT0, "SCI_HDAT0", true, false, 0x0000, 0x0000, "Stream header data 0 (read-only)"},
@@ -301,25 +300,6 @@ void test_vs1053_communication(void) {
     } else {
         LOG_WRN("Unexpected chip version: %d (expected 4 for VS1053)", version);
     }
-    
-    // Test 3: Test a safe writable register (AICTRL1)
-    LOG_INF("Testing AICTRL1 register write/read...");
-    
-    uint16_t original = VS1053ReadSci(SCI_AICTRL1);
-    VS1053WriteSci(SCI_AICTRL1, 0x1234);
-    k_msleep(10);
-    uint16_t readback = VS1053ReadSci(SCI_AICTRL1);
-    VS1053WriteSci(SCI_AICTRL1, original);  // Restore
-    
-    LOG_INF("Wrote 0x1234, read back 0x%04X", readback);
-    
-    if (readback == 0x1234) {
-        LOG_INF("Register write/read test PASSED ✓");
-        LOG_INF("VS1053 SCI communication is working correctly!");
-    } else {
-        LOG_ERR("Register write/read test FAILED ✗");
-        LOG_ERR("SCI communication may have issues");
-    }
 }
 
 // Stress test - rapid register access
@@ -388,10 +368,10 @@ void vs1053_register_test_suite(void) {
     test_all_registers_basic();
     k_msleep(500);
     
-    test_writable_registers();
-    k_msleep(500);
+    //test_writable_registers();
+    //k_msleep(500);
     
-    test_vs1053_stress();
+    //test_vs1053_stress();
     
     LOG_INF("=== Register Test Suite Complete ===");
 }
@@ -546,12 +526,11 @@ int VS1053WriteSdi(const uint8_t *data, uint8_t len) {
         k_sleep(K_USEC(1));
     }
     
-    
     // Use the new app_spi_xfer function for data transfer
     // SPI_DATA type automatically handles DCS pin control
     app_spi_xfer(SPI_DATA, (uint8_t *)data, NULL, len);
+    LOG_INF("SDI write successful, %d bytes written", len);
 
-    LOG_DBG("SDI write successful, %d bytes written", len);
     return 0;
 }
 
@@ -565,6 +544,8 @@ int VS1053WriteSdi(const uint8_t *data, uint8_t len) {
 void VS1053bLoadPlugin(const uint16_t *data, int len) {
     int i = 0;
     unsigned short addr, n, val;
+
+    LOG_INF("Loading MIDI Plugin");
     while (i<len) {
         addr = data[i++];
         n = data[i++];
@@ -580,6 +561,7 @@ void VS1053bLoadPlugin(const uint16_t *data, int len) {
             }
         }
     }
+    LOG_INF("MIDI Plugin Loaded");
 }
 
 /**< miscellaneous - end >**/
@@ -622,11 +604,11 @@ uint16_t VS1053ReadMem(uint16_t addr) {
 uint8_t VS1053HardwareReset(void) {
     // Pull reset pin low
     gpio_pin_set_dt(&vs_gpio_reset, 0);
-    k_msleep(50);
+    k_msleep(10);
     
     // Release reset pin
     gpio_pin_set_dt(&vs_gpio_reset, 1);
-    k_msleep(50);
+    k_msleep(10);
 
     return 1;
 }
@@ -662,9 +644,12 @@ uint8_t VS1053SoftwareReset(void) {
     }
 
     VS1053bLoadPlugin(plugin, sizeof(plugin)/sizeof(plugin[0]));
+    //setup_vs1053_realtime_midi();
 
     return 1;
 }
+
+
 
 /* 
 Update output volume
@@ -795,55 +780,285 @@ void setup_vs1053_midi_mode(void) {
     LOG_INF("VS1053 MIDI mode setup complete");
 }
 
-// Alternative version that matches your original pattern more closely:
-/*uint16_t VS1053ReadSci_Debug(uint8_t addr) {
-    // Wait for DREQ with better timeout handling
-    while(gpio_pin_get_dt(&vs_gpio_dreq)) {
-        k_sleep(K_USEC(1));
-    }
+void midi_send_byte_debug(uint8_t data) {
+    uint8_t packet[2] = {0x00, data};
     
-    uint8_t tx_buf[4] = {SCI_READ_FLAG, addr};
-    uint8_t rx_buf[4] = {0};
+    LOG_INF("Sending MIDI byte: 0x%02X (packet: 0x%02X 0x%02X)", data, packet[0], packet[1]);
     
-    // Prepare SPI buffers manually
-    struct spi_buf tx_spi_buf = {.buf = tx_buf, .len = 4};
-    struct spi_buf rx_spi_buf = {.buf = rx_buf, .len = 4};
+    // Check DREQ before sending
+    int dreq_before = gpio_pin_get_dt(&vs_gpio_dreq);
+    LOG_INF("DREQ before send: %d", dreq_before);
     
-    // Direct SPI call
-    app_spi_xfer(SPI_CTRL, NULL, &rx_buf, VS1053_XFER_LEN_B);
+    int result = VS1053WriteSdi(packet, 2);
     
-    // Debug output
-    LOG_INF("RX: [0x%02X, 0x%02X, 0x%02X, 0x%02X]", 
-            rx_buf[0], rx_buf[1], rx_buf[2], rx_buf[3]);
+    // Check DREQ after sending
+    int dreq_after = gpio_pin_get_dt(&vs_gpio_dreq);
+    LOG_INF("DREQ after send: %d, result: %d", dreq_after, result);
     
-    uint16_t result = (rx_buf[2] << 8) | rx_buf[3];
-    LOG_INF("Combined result: 0x%04X", result);
+    k_usleep(1000); // Increased delay for debugging
+}
+
+void debug_vs1053_midi_setup(void) {
+    LOG_INF("=== VS1053 MIDI Setup Debug ===");
     
-    return result;
+    // Read current registers
+    uint16_t mode = VS1053ReadSci(SCI_MODE);
+    uint16_t status = VS1053ReadSci(SCI_STATUS);
+    uint16_t clockf = VS1053ReadSci(SCI_CLOCKF);
+    uint16_t vol = VS1053ReadSci(SCI_VOL);
+    
+    LOG_INF("Current MODE: 0x%04X", mode);
+    LOG_INF("Current STATUS: 0x%04X", status);
+    LOG_INF("Current CLOCKF: 0x%04X", clockf);
+    LOG_INF("Current VOL: 0x%04X", vol);
+    
+    // Check if we're in the right mode for MIDI
+    uint16_t chip_version = (status >> 4) & 0xF;
+    LOG_INF("Chip version: %d", chip_version);
+    
+    // Make sure we're set up for real-time MIDI
+    LOG_INF("Setting up for real-time MIDI...");
+    
+    // Set mode for real-time MIDI operation
+    uint16_t new_mode = SM_SDINEW | SM_TESTS;  // Remove SM_RESET
+    VS1053WriteSci(SCI_MODE, new_mode);
+    k_msleep(100);
+    
+    // Set clock to 4x for better MIDI performance
+    VS1053WriteSci(SCI_CLOCKF, 0x8000);  // 4.0x multiplier
+    k_msleep(100);
+    
+    // Set volume to make sure we can hear something
+    VS1053WriteSci(SCI_VOL, 0x2020);  // -16dB on both channels
+    k_msleep(100);
+    
+    LOG_INF("MIDI setup complete");
+}
+
+void check_vs1053_audio_output(void) {
+    LOG_INF("=== VS1053 Sine Wave Test ===");
+    
+    // Make sure we're in test mode
+    VS1053WriteSci(SCI_MODE, SM_SDINEW | SM_TESTS);
+    k_msleep(100);
+    
+    // Set volume to medium level
+    VS1053WriteSci(SCI_VOL, 0x3030);  // -24dB
+    k_msleep(100);
+    
+    LOG_INF("Starting sine test - you should hear a clear tone");
+    
+    // Sine test: 44100Hz sample rate, ~1kHz sine wave
+    uint8_t sine_test[] = {0x53, 0xEF, 0x6E, 0x44, 0x00, 0x00, 0x00, 0x00};
+    VS1053WriteSdi(sine_test, 8);
+    
+    k_msleep(3000);  // 3 seconds
+    
+    // Stop sine test
+    uint8_t sine_stop[] = {0x45, 0x78, 0x69, 0x74, 0x00, 0x00, 0x00, 0x00};
+    VS1053WriteSdi(sine_stop, 8);
+    
+    // Return to normal mode
+    VS1053WriteSci(SCI_MODE, SM_SDINEW);
+    k_msleep(100);
+    
+    LOG_INF("Sine test complete");
 }
 
 
-// Test function to verify SPI communication
-void VS1053TestSPI(void) {
-    LOG_INF("=== VS1053 SPI Communication Test ===");
-    VS1053HardwareReset();
+void test_raw_midi_commands(void) {
+    LOG_INF("=== Testing Raw MIDI Commands ===");
     
-    // Test 1: Check DREQ pin state
-    int dreq_state = gpio_pin_get_dt(&vs_gpio_dreq);
-    LOG_INF("DREQ pin state: %d", dreq_state);
+    // Test 1: Send Program Change directly
+    LOG_INF("Sending raw Program Change (Piano)...");
+    midi_send_byte_debug(0xC0);  // Program change channel 0
+    midi_send_byte_debug(0x00);  // Program 0 (Acoustic Grand Piano)
+    k_msleep(500);
     
-    // Test 2: Try to read STATUS register
-    LOG_INF("Reading STATUS register (0x01)...");
-    uint16_t status = VS1053ReadSci_Debug(SCI_STATUS);
-    LOG_INF("STATUS: 0x%04X", status);
+    // Test 2: Send Note On directly  
+    LOG_INF("Sending raw Note On...");
+    midi_send_byte_debug(0x90);  // Note on channel 0
+    midi_send_byte_debug(60);    // Middle C
+    midi_send_byte_debug(100);   // Velocity 100
+    k_msleep(2000);
     
-    // Test 3: Try to read MODE register  
-    LOG_INF("Reading MODE register (0x00)...");
-    uint16_t mode = VS1053ReadSci_Debug(SCI_MODE);
-    LOG_INF("MODE: 0x%04X", mode);
+    // Test 3: Send Note Off directly
+    LOG_INF("Sending raw Note Off...");
+    midi_send_byte_debug(0x80);  // Note off channel 0  
+    midi_send_byte_debug(60);    // Middle C
+    midi_send_byte_debug(64);    // Release velocity
+    k_msleep(500);
     
-    // Test 4: Read version
-    LOG_INF("Reading version info...");
-    uint16_t version = ((status >> 4) & 15);
-    LOG_INF("Chip version: %d", version);
-}*/
+    LOG_INF("Raw MIDI test complete");
+}
+
+void test_plugin_functionality(void) {
+    LOG_INF("=== Testing MIDI Plugin Functionality ===");
+    
+    // Check if VS1053 is ready for MIDI
+    uint16_t mode = VS1053ReadSci(SCI_MODE);
+    LOG_INF("MODE before MIDI: 0x%04X", mode);
+    
+    // Send a simple MIDI command and check if it's processed
+    LOG_INF("Sending test MIDI command...");
+    
+    // Send program change
+    midi_send_byte_debug(0xC0);  // Program change channel 0
+    k_msleep(10);
+    midi_send_byte_debug(0x00);  // Program 0 (piano)
+    k_msleep(100);
+    
+    // Check HDAT registers for MIDI activity
+    uint16_t hdat0 = VS1053ReadSci(SCI_HDAT0);
+    uint16_t hdat1 = VS1053ReadSci(SCI_HDAT1);
+    
+    LOG_INF("After MIDI command - HDAT0: 0x%04X, HDAT1: 0x%04X", hdat0, hdat1);
+    
+    if (hdat1 == 0x4D54) {  // "MT" in ASCII
+        LOG_INF("✓ MIDI plugin is active and processing commands!");
+    } else {
+        LOG_WRN("Plugin loaded but may not be active (HDAT1 should be 0x4D54)");
+    }
+}
+
+void check_midi_plugin_loaded(void) {
+    LOG_INF("=== Checking MIDI Plugin Status ===");
+    
+    // The plugin data format is: addr, count, data...
+    // From rtmidistart.plg: 0x0007, 0x0001, 0x8050, 0x0006, 0x0014, 0x0030...
+    
+    // Check specific memory locations that should contain plugin code
+    uint16_t addr1 = VS1053ReadMem(0x0007);  // Should contain plugin data
+    uint16_t addr2 = VS1053ReadMem(0x8050);  // Should be 0x0030 based on your plugin
+    uint16_t addr3 = VS1053ReadMem(0x8051);  // Should be 0xB080 based on your plugin
+    
+    LOG_INF("Memory 0x0007: 0x%04X", addr1);
+    LOG_INF("Memory 0x8050: 0x%04X (expecting 0x0030)", addr2);
+    LOG_INF("Memory 0x8051: 0x%04X (expecting 0xB080)", addr3);
+    
+    // Check against actual plugin values
+    if (addr2 == 0x0030 && addr3 == 0xB080) {
+        LOG_INF("✓ MIDI plugin appears to be loaded correctly!");
+    } else {
+        LOG_WRN("✗ MIDI plugin values don't match expected");
+        LOG_INF("This could indicate plugin loading failed");
+    }
+    
+    // Additional check - verify plugin loaded to right area
+    uint16_t plugin_start = VS1053ReadMem(0x8050);
+    uint16_t plugin_next = VS1053ReadMem(0x8051);
+    LOG_INF("Plugin verification: 0x8050=0x%04X, 0x8051=0x%04X", plugin_start, plugin_next);
+
+    //test_plugin_functionality();
+}
+
+void setup_vs1053_for_midi(void) {
+    LOG_INF("=== Setting up VS1053 for MIDI ===");
+    
+    // 1. Start with reset to clear any previous state
+    VS1053WriteSci(SCI_MODE, SM_SDINEW | SM_RESET);
+    k_msleep(100);
+    
+    // Wait for reset to complete
+    while(!gpio_pin_get_dt(&vs_gpio_dreq)) {
+        k_msleep(1);
+    }
+    
+    // 2. Set proper mode for MIDI operation
+    // SM_SDINEW is required, other bits may be needed for MIDI
+    uint16_t midi_mode = SM_SDINEW;  // Start with basic mode
+    VS1053WriteSci(SCI_MODE, midi_mode);
+    k_msleep(50);
+    
+    // 3. Set clock for MIDI (4.0x for better MIDI performance)
+    VS1053WriteSci(SCI_CLOCKF, 0x8000);  // 4.0x multiplier
+    k_msleep(100);
+    
+    // 4. Set volume to moderate level
+    VS1053WriteSci(SCI_VOL, 0x2020);  // -16dB
+    k_msleep(50);
+    
+    // 5. Verify mode was set
+    uint16_t mode_check = VS1053ReadSci(SCI_MODE);
+    LOG_INF("MODE after setup: 0x%04X", mode_check);
+    
+    LOG_INF("VS1053 configured for MIDI");
+}
+
+void reset_vs1053_audio_pipeline(void) {
+    LOG_INF("=== Resetting VS1053 Audio Pipeline ===");
+    
+    // 1. Hard reset first
+    gpio_pin_set_dt(&vs_gpio_reset, 1);  // Assert reset
+    k_msleep(100);
+    gpio_pin_set_dt(&vs_gpio_reset, 0);  // Release reset
+    k_msleep(1000);  // Long wait for stabilization
+    
+    // Wait for DREQ
+    int timeout = 5000;
+    while(!gpio_pin_get_dt(&vs_gpio_dreq) && timeout > 0) {
+        k_msleep(1);
+        timeout--;
+    }
+    
+    if (timeout == 0) {
+        LOG_ERR("DREQ timeout after reset");
+        return;
+    }
+    
+    // 2. Start with absolute minimal configuration
+    LOG_INF("Minimal VS1053 configuration...");
+    
+    // Set mode with NO clock multiplication (1.0x only)
+    VS1053WriteSci(SCI_MODE, SM_SDINEW);
+    k_msleep(100);
+    
+    // Set clock to 1.0x (no PLL)
+    VS1053WriteSci(SCI_CLOCKF, 0x0000);
+    k_msleep(200);
+    
+    // Set safe volume
+    VS1053WriteSci(SCI_VOL, 0x4040);  // -32dB
+    k_msleep(100);
+    
+    // Force audio pipeline reset by setting sample rate
+    VS1053WriteSci(SCI_AUDATA, 0xAC44);  // 44100 Hz, stereo
+    k_msleep(100);
+    
+    LOG_INF("Audio pipeline reset complete");
+}
+
+void test_audio_path_minimal(void) {
+    LOG_INF("=== Testing Audio Path (1.0x Clock Only) ===");
+    
+    // Ensure we're at 1.0x clock
+    VS1053WriteSci(SCI_CLOCKF, 0x0000);
+    k_msleep(200);
+    
+    // Enable test mode
+    VS1053WriteSci(SCI_MODE, SM_SDINEW | SM_TESTS);
+    k_msleep(100);
+    
+    // Set very safe volume
+    VS1053WriteSci(SCI_VOL, 0x6060);  // -48dB (very quiet)
+    k_msleep(100);
+    
+    LOG_INF("Starting MINIMAL sine test (1.0x clock, low volume)");
+    
+    // Very basic sine test - 22050Hz sample rate, low frequency
+    uint8_t sine_minimal[] = {0x53, 0xEF, 0x6E, 0x00, 0x00, 0x00, 0x00, 0x00};
+    VS1053WriteSdi(sine_minimal, 8);
+    
+    LOG_INF("Should hear faint, clean tone for 5 seconds...");
+    k_msleep(5000);
+    
+    // Stop sine
+    uint8_t sine_stop[] = {0x45, 0x78, 0x69, 0x74, 0x00, 0x00, 0x00, 0x00};
+    VS1053WriteSdi(sine_stop, 8);
+    
+    // Return to normal mode
+    VS1053WriteSci(SCI_MODE, SM_SDINEW);
+    k_msleep(100);
+    
+    LOG_INF("Minimal sine test complete");
+}

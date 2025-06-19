@@ -94,6 +94,7 @@
 
 // Function prototypes
 void i2c_interface_init(void);
+
 void i2c_lcd_transmit(uint8_t buf);
 void i2c_lcd_read(uint8_t buf);
 void i2c_lcd_set_cursor(uint8_t c, uint8_t l);
@@ -112,5 +113,7 @@ int audio_amplifier_gpio_init(void);
 void audio_amplifier_hardware_enable(void);
 void audio_amplifier_hardware_disable(void);
 void test_audio_amplifier(void);
+
+void get_amp_gpio_pin_sates(void);
 
 #endif // I2C_INTERFACE_H

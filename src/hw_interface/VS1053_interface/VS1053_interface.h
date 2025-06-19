@@ -30,7 +30,17 @@ uint16_t VS1053ReadSci_Debug(uint8_t addr);
 void VS1053TestSPI(void);
 void vs1053_register_test_suite(void);
 void setup_vs1053_midi_mode(void);
+void test_sdi_interface(void);
 
 void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_t len);
+void midi_send_byte_debug(uint8_t data);
+void debug_vs1053_midi_setup(void);
+void check_vs1053_audio_output(void);
+void test_raw_midi_commands(void);
+void check_midi_plugin_loaded(void);
+void setup_vs1053_for_midi(void);
+
+void test_audio_path_minimal(void);
+void reset_vs1053_audio_pipeline(void);
 
 #endif // VS1053_INTERFACE_H

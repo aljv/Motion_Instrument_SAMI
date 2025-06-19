@@ -181,7 +181,9 @@
 
 //Add LCD and Audio Amplifier to i2c0
 &i2c0 {
+
     status = "okay";
+	clock-frequency = <400000>;
 
     lcd: lcd@72{
         compatible = "i2c-device";
@@ -363,5 +365,9 @@
 };
 
 &uart0{
+	status = "disabled";
+};
+
+&spi1{
 	status = "disabled";
 };

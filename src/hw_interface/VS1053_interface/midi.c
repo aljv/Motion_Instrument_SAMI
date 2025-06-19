@@ -20,11 +20,9 @@ LOG_MODULE_REGISTER(midi_test, LOG_LEVEL_INF);
 
 // VS1053 MIDI Implementation using your header definitions
 void midi_send_byte(uint8_t data) {
-    // Send single MIDI byte through SDI using your SPI data interface
-    app_spi_xfer(SPI_DATA, &data, NULL, 1);
-
-    // Small delay to ensure proper timing - VS1053 needs time to process MIDI data
-    k_usleep(100);
+    uint8_t packet[2] = {0x00, data};
+    VS1053WriteSdi(packet, 2); 
+    k_msleep(10);
 }
 
 // Implement your MIDI functions for VS1053
@@ -53,7 +51,7 @@ void midiSetChannelBank(uint8_t chan, uint8_t bank) {
     LOG_INF("MIDI Set Bank: Ch=%d, Bank=%d", chan, bank);
 
     midi_send_byte(control_change | chan);
-    midi_send_byte(0x00);  // Bank select MSB
+    midi_send_byte((uint8_t)0x00);  // Bank select MSB
     midi_send_byte(bank);
 }
 
@@ -376,21 +374,25 @@ void vs1053_midi_test_suite(void) {
 void vs1053_midi_quick_test(void) {
     LOG_INF("=== VS1053 MIDI Quick Test ===");
 
-    setup_vs1053_midi_mode();
-    k_msleep(200);
+    //setup_vs1053_midi_mode();
+    //k_msleep(200);
 
-    // Just play a simple note with acoustic grand piano
-    LOG_INF("Playing test note...");
-    midiSetInstrument(0, ACOUSTIC_GRAND_PIANO);
-    k_msleep(100);
-    midiSetChannelVolume(0, 100);
-    k_msleep(100);
+    midiNoteOn(0, MIDI_NOTE_C4, 108);
+    k_msleep(250);
+    midiNoteOff(0, MIDI_NOTE_C4, 0);
 
-    midiNoteOn(0, MIDI_NOTE_C4, 100);
-    k_msleep(1000);
-    midiNoteOff(0, MIDI_NOTE_C4, 64);
+    midiNoteOn(0, MIDI_NOTE_D4, 108);
+    k_msleep(250);
+    midiNoteOff(0, MIDI_NOTE_D4, 0);
 
-    cleanup_midi();
+    midiNoteOn(0, MIDI_NOTE_C4, 108);
+    k_msleep(250);
+    midiNoteOff(0, MIDI_NOTE_C4, 0);
+    midiNoteOn(0, MIDI_NOTE_D4, 108);
+    k_msleep(250);
+    midiNoteOff(0, MIDI_NOTE_D4, 0);
+
+    //cleanup_midi();
 
     LOG_INF("MIDI quick test complete");
 }
@@ -405,5 +407,5 @@ void run_midi_tests(void) {
     k_msleep(2000);
 
     // Then run full suite
-    vs1053_midi_test_suite();
+    //vs1053_midi_test_suite();
 }

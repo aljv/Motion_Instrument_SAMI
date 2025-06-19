@@ -11,8 +11,10 @@
 LOG_MODULE_REGISTER(MODULE);
 
 #define LCD_I2C_NODE DT_NODELABEL(lcd)
+#define AMP_I2C_NODE DT_NODELABEL(audio_amp)
 
 static struct i2c_dt_spec dev_lcd_i2c = I2C_DT_SPEC_GET(LCD_I2C_NODE);
+static struct i2c_dt_spec dev_amp_i2c = I2C_DT_SPEC_GET(AMP_I2C_NODE);
 
 // GPIO definitions for audio amplifier control (if needed)
 #define AMP_MUTE_NODE DT_ALIAS(ampmute)
@@ -23,7 +25,7 @@ static const struct gpio_dt_spec amp_mute = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_mu
 static const struct gpio_dt_spec amp_max_mute = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_max_mute), gpios);
 static const struct gpio_dt_spec amp_max_shdn = GPIO_DT_SPEC_GET(DT_NODELABEL(amp_max_shdn), gpios);
 
-static uint8_t current_amp_volume = DEFAULT_AMP_VOL;
+static uint8_t current_amp_volume = DEFAULT_AMP_VOL - 5;
 
 // TODOS 
 // Add all LCD code from SAMI NRF SDK app.
@@ -32,14 +34,25 @@ void i2c_interface_init(void)
 {
         if(!device_is_ready(dev_lcd_i2c.bus))
         {
-                LOG_ERR("I2C bus %s is not ready\n\r", dev_lcd_i2c.bus->name);
+                LOG_ERR("I2C LCD bus %s is not ready\n\r", dev_lcd_i2c.bus->name);
                 return;
         }
         else
         {
-                LOG_INF("I2C bus initialized");
+                LOG_INF("I2C LCD bus initialized");
+        }
+
+        if(!device_is_ready(dev_amp_i2c.bus))
+        {
+                LOG_ERR("I2C AMP bus %s is not ready\n\r", dev_lcd_i2c.bus->name);
+                return;
+        }
+        else
+        {
+                LOG_INF("I2C AMP bus initialized");
         }
 }
+
 
 void i2c_lcd_transmit(uint8_t buf)
 {
@@ -152,17 +165,9 @@ void max9744_set_volume(uint8_t volume)
                 LOG_WRN("Volume clamped to maximum: %d", MAXIMUM_AMP_VOL);
         }
 
-        // Create I2C message for audio amplifier
-        uint8_t msg_buf[2];
-        struct i2c_msg msgs[1];
+        uint8_t config[] = {volume};
+        int ret = i2c_write_dt(&dev_amp_i2c, config, sizeof(config));
 
-        msg_buf[0] = volume;
-        
-        msgs[0].buf = msg_buf;
-        msgs[0].len = 1;
-        msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-
-        int ret = i2c_transfer(dev_lcd_i2c.bus, msgs, 1, AUDIO_AMP_ADDR);
 
         if(ret != 0)
         {
@@ -202,30 +207,7 @@ int audio_amplifier_gpio_init(void)
 {
         int ret;
 
-        // Initialize MUTE pin
-        if (!gpio_is_ready_dt(&amp_mute)) {
-                LOG_ERR("Audio amplifier MUTE GPIO not ready");
-                return -ENODEV;
-        }
         
-        ret = gpio_pin_configure_dt(&amp_mute, GPIO_OUTPUT_INACTIVE);
-        if (ret < 0) {
-                LOG_ERR("Cannot configure audio amplifier MUTE GPIO (%d)", ret);
-                return ret;
-        }
-
-        // Initialize MAX_MUTE pin
-        if (!gpio_is_ready_dt(&amp_max_mute)) {
-                LOG_ERR("Audio amplifier MAX_MUTE GPIO not ready");
-                return -ENODEV;
-        }
-        
-        ret = gpio_pin_configure_dt(&amp_max_mute, GPIO_OUTPUT_INACTIVE);
-        if (ret < 0) {
-                LOG_ERR("Cannot configure audio amplifier MAX_MUTE GPIO (%d)", ret);
-                return ret;
-        }
-
         // Initialize MAX_SHDN pin (active low for shutdown, so start with high to enable)
         if (!gpio_is_ready_dt(&amp_max_shdn)) {
                 LOG_ERR("Audio amplifier MAX_SHDN GPIO not ready");
@@ -238,7 +220,34 @@ int audio_amplifier_gpio_init(void)
                 return ret;
         }
 
+        // Initialize MUTE pin
+        if (!gpio_is_ready_dt(&amp_mute)) {
+                LOG_ERR("Audio amplifier MUTE GPIO not ready");
+                return -ENODEV;
+        }
+        
+        ret = gpio_pin_configure_dt(&amp_mute, GPIO_OUTPUT_ACTIVE);
+        if (ret < 0) {
+                LOG_ERR("Cannot configure audio amplifier MUTE GPIO (%d)", ret);
+                return ret;
+        }
+
+        // Initialize MAX_MUTE pin
+        if (!gpio_is_ready_dt(&amp_max_mute)) {
+                LOG_ERR("Audio amplifier MAX_MUTE GPIO not ready");
+                return -ENODEV;
+        }
+        
+        ret = gpio_pin_configure_dt(&amp_max_mute, GPIO_OUTPUT_ACTIVE);
+        if (ret < 0) {
+                LOG_ERR("Cannot configure audio amplifier MAX_MUTE GPIO (%d)", ret);
+                return ret;
+        }
+
+        audio_amplifier_hardware_disable();
+        
         LOG_INF("Audio amplifier GPIO pins initialized");
+
         return 0;
 }
 
@@ -248,8 +257,8 @@ void audio_amplifier_hardware_enable(void)
         gpio_pin_set_dt(&amp_max_shdn, 1);
         
         // Ensure amplifier is not muted via GPIO
-        gpio_pin_set_dt(&amp_mute, 0);
-        gpio_pin_set_dt(&amp_max_mute, 0);
+        gpio_pin_set_dt(&amp_mute, 1);
+        gpio_pin_set_dt(&amp_max_mute, 1);
         
         LOG_INF("Audio amplifier hardware enabled");
 }
@@ -257,13 +266,20 @@ void audio_amplifier_hardware_enable(void)
 void audio_amplifier_hardware_disable(void)
 {
         // Mute the amplifier
-        gpio_pin_set_dt(&amp_mute, 1);
-        gpio_pin_set_dt(&amp_max_mute, 1);
+        gpio_pin_set_dt(&amp_max_mute, 0);
+        gpio_pin_set_dt(&amp_mute, 0);
         
         // Put amplifier in shutdown mode
-        gpio_pin_set_dt(&amp_max_shdn, 0);
+        //gpio_pin_set_dt(&amp_max_shdn, 0);
         
         LOG_INF("Audio amplifier hardware disabled");
+}
+
+void get_amp_gpio_pin_sates(void)
+{
+        LOG_INF("Mute %d", gpio_pin_get_dt(&amp_mute));
+        LOG_INF("Max Mute %d", gpio_pin_get_dt(&amp_max_mute));
+        LOG_INF("SHDN %d", gpio_pin_get_dt(&amp_max_shdn));
 }
 
 void test_audio_amplifier(void)

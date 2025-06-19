@@ -45,6 +45,15 @@ int main(void)
     LOG_INF("Initializing I2C interface...");
     i2c_interface_init();
         
+
+    LOG_INF("Initializing VS1053 codec...");
+    VS1053Init();
+    k_msleep(2000);
+    //check_midi_plugin_loaded();
+    //k_msleep(2000);
+    vs1053_register_test_suite();
+    k_msleep(100);
+
     // Initialize audio amplifier GPIO control pins
     LOG_INF("Initializing audio amplifier GPIO...");
     ret = audio_amplifier_gpio_init();
@@ -52,23 +61,24 @@ int main(void)
         LOG_ERR("Failed to initialize audio amplifier GPIO");
         return ret;
     }
-        
-    // Enable audio amplifier hardware
-    audio_amplifier_hardware_enable();
-        
+
+    //audio_amplifier_hardware_enable();
     // Initialize audio amplifier via I2C
     LOG_INF("Initializing MAX9744 audio amplifier...");
-    max9744_init();
+    max9744_set_volume(DEFAULT_AMP_VOL);
+    k_msleep(100);
+    audio_amplifier_hardware_enable();
 
-    LOG_INF("Initializing VS1053 codec...");
-    VS1053Init();
-    vs1053_register_test_suite();
-    k_msleep(2000);
-    setup_vs1053_midi_mode();
-    k_msleep(2000);
 
-    // Run MIDI tests
-    LOG_INF("Starting MIDI playback tests...");
+    //check_vs1053_audio_output();
+    // Set VS1053 volume
+
+    VS1053UpdateVolume(0x30, 0x30);
+    midiSetChannelBank(0, 0x79);
+    midiSetChannelVolume(0, 100);    
+    midiSetInstrument(0, ELECTRIC_GRAND_PIANO);
+
+    k_msleep(250);
     run_midi_tests();
 
     while (1) {

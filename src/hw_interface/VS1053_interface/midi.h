@@ -43,8 +43,8 @@ void mfwrite();
 #define note_off         	0x80
 #define note_on          	0x90
 #define poly_aftertouch  	0xa0
-#define control_change    	0xb0
-#define program_chng     	0xc0
+#define control_change    	0xB0
+#define program_chng     	0xC0
 #define channel_aftertouch      0xd0
 #define pitch_wheel      	0xe0
 #define system_exclusive      	0xf0
