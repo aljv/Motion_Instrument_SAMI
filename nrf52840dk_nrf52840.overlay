@@ -332,6 +332,10 @@
     };
 };
 
+&uart0 {
+	status = "okay";
+};
+
 //Disable all unused dev. kit nodes
 &button0 {
 	status = "disabled";
@@ -361,10 +365,6 @@
 	status = "disabled";
 };
 &pwm0 {
-	status = "disabled";
-};
-
-&uart0{
 	status = "disabled";
 };
 

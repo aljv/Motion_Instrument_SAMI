@@ -426,6 +426,7 @@ void app_spi_xfer(spi_xfer_type_t type, uint8_t* tx_dat, uint8_t* rx_dat, uint8_
         gpio_pin_set_dt(&vs_gpio_mcs, 0);  // Assert MCS
     } else {
         LOG_ERR("Invalid SPI transfer type");
+        err = -EINVAL;
         return;
     }
     
