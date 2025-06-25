@@ -21,6 +21,7 @@
 #include "hw_interface/spi_interface.h"
 #include "hw_interface/i2c_interface.h"
 #include "hw_interface/VS1053_interface/midi.h"
+#include "hw_interface/uart_interface.h"
 
 #include <dk_buttons_and_leds.h>
 
@@ -40,18 +41,20 @@ int main(void)
     int ret;
         
     LOG_INF("Starting SAMI Motion Instrument application");
+
+    LOG_INF("Initializing UART interface..");
+    app_uart_init();
         
     // Initialize I2C interface
     LOG_INF("Initializing I2C interface...");
     i2c_interface_init();
-        
 
     LOG_INF("Initializing VS1053 codec...");
     VS1053Init();
     k_msleep(2000);
-    //check_midi_plugin_loaded();
+    //check_midi_plugin_loaded();-
     //k_msleep(2000);
-    vs1053_register_test_suite();
+    //vs1053_register_test_suite();
     k_msleep(100);
 
     // Initialize audio amplifier GPIO control pins

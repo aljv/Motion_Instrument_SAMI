@@ -45,3 +45,16 @@ int app_spi_write(const struct spi_dt_spec *spec, const struct spi_buf_set *tx_b
     LOG_DBG("SPI write successful");
     return 0;
 }
+
+int app_spi_read(const struct spi_dt_spec *spec, const struct spi_buf_set *rx_buf)
+{
+    // Write-only operation (no receive buffer)
+    int err = spi_read_dt(spec, rx_buf);
+    if (err) {
+        LOG_ERR("spi_read_dt() failed, err: %d", err);
+        return err;
+    }
+    
+    LOG_DBG("SPI read successful");
+    return 0;
+}

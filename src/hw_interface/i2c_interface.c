@@ -281,28 +281,3 @@ void get_amp_gpio_pin_sates(void)
         LOG_INF("Max Mute %d", gpio_pin_get_dt(&amp_max_mute));
         LOG_INF("SHDN %d", gpio_pin_get_dt(&amp_max_shdn));
 }
-
-void test_audio_amplifier(void)
-{
-        LOG_INF("Testing audio amplifier volume control...");
-        
-        // Test different volume levels
-        uint8_t test_volumes[] = {10, 20, 30, 40, 50, 45}; // End with default volume
-        
-        for (int i = 0; i < ARRAY_SIZE(test_volumes); i++) {
-                LOG_INF("Setting volume to: %d", test_volumes[i]);
-                max9744_set_volume(test_volumes[i]);
-                k_sleep(K_SECONDS(2));
-        }
-        
-        // Test mute/unmute
-        LOG_INF("Testing mute function");
-        max9744_mute();
-        k_sleep(K_SECONDS(2));
-        
-        LOG_INF("Testing unmute function");
-        max9744_unmute();
-        k_sleep(K_SECONDS(1));
-        
-        LOG_INF("Audio amplifier test completed");
-}

@@ -38,4 +38,13 @@ int app_spi_transceive(const struct spi_dt_spec *spec, const struct spi_buf_set 
  */
 int app_spi_write(const struct spi_dt_spec *spec, const struct spi_buf_set *tx_buf);
 
+/**
+ * @brief Perform SPI read operation
+ * 
+ * @param spec SPI device tree spec
+ * @param rx_buf receiver buffer set
+ * @return int 0 on success, negative error code otherwise
+ */
+int app_spi_read(const struct spi_dt_spec *spec, const struct spi_buf_set *rx_buf);
+
 #endif /* SPI_INTERFACE_H */

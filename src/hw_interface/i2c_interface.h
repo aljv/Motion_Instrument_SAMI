@@ -112,8 +112,6 @@ void max9744_unmute(void);
 int audio_amplifier_gpio_init(void);
 void audio_amplifier_hardware_enable(void);
 void audio_amplifier_hardware_disable(void);
-void test_audio_amplifier(void);
 
-void get_amp_gpio_pin_sates(void);
 
 #endif // I2C_INTERFACE_H

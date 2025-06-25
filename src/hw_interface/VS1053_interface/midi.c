@@ -3,6 +3,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 #include "VS1053_interface.h"
+#include "uart_interface.h"
 #include "midi.h"
 
 LOG_MODULE_REGISTER(midi_test, LOG_LEVEL_INF);
@@ -20,8 +21,8 @@ LOG_MODULE_REGISTER(midi_test, LOG_LEVEL_INF);
 
 // VS1053 MIDI Implementation using your header definitions
 void midi_send_byte(uint8_t data) {
-    uint8_t packet[2] = {0x00, data};
-    VS1053WriteSdi(packet, 2); 
+
+    uart_send_midi_data(&data, 1); 
     k_msleep(10);
 }
 
@@ -284,45 +285,6 @@ void test_volume_control(void) {
     LOG_INF("Volume control test complete");
 }
 
-void test_special_instruments(void) {
-    LOG_INF("=== Testing Special/Effect Instruments ===");
-
-    // Test some of the more unique instruments from your header
-    uint8_t special_instruments[] = {
-        BAG_PIPE,
-        SCIFI_FX,
-        SYNTH_DRUM,
-        XYLOPHONE
-    };
-
-    const char* special_names[] = {
-        "Bag Pipe",
-        "Sci-Fi FX",
-        "Synth Drum",
-        "Xylophone"
-    };
-
-    for (int i = 0; i < 4; i++) {
-        LOG_INF("Testing special instrument: %s", special_names[i]);
-
-        midiSetInstrument(0, special_instruments[i]);
-        k_msleep(200);
-
-        // Play a pattern that shows off the instrument character
-        for (int note = 0; note < 4; note++) {
-            uint8_t play_note = MIDI_NOTE_C4 + (note * 2);  // C, D, E, F#
-            midiNoteOn(0, play_note, 100);
-            k_msleep(300);
-            midiNoteOff(0, play_note, 64);
-            k_msleep(100);
-        }
-
-        k_msleep(500);
-    }
-
-    LOG_INF("Special instruments test complete");
-}
-
 void cleanup_midi(void) {
     LOG_INF("=== Cleaning up MIDI ===");
 
@@ -344,25 +306,28 @@ void vs1053_midi_test_suite(void) {
 
     // Run individual tests
     test_single_note();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     test_scale();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     test_chord();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     test_instruments();
-    k_msleep(1000);
-
-    test_special_instruments();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     test_multi_channel();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     test_volume_control();
-    k_msleep(1000);
+    cleanup_midi();
+    k_msleep(2000);
 
     // Cleanup
     cleanup_midi();
@@ -392,7 +357,7 @@ void vs1053_midi_quick_test(void) {
     k_msleep(250);
     midiNoteOff(0, MIDI_NOTE_D4, 0);
 
-    //cleanup_midi();
+    cleanup_midi();
 
     LOG_INF("MIDI quick test complete");
 }
@@ -407,5 +372,6 @@ void run_midi_tests(void) {
     k_msleep(2000);
 
     // Then run full suite
-    //vs1053_midi_test_suite();
+    vs1053_midi_test_suite();
 }
+
