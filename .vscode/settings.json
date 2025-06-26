@@ -2,5 +2,12 @@
     "nrf-connect.applications": [
         "${workspaceFolder}"
     ],
-    "files.autoSave": "off"
+    "files.autoSave": "off",
+    "files.associations": {
+        "diskio.h": "c",
+        "ff.h": "c",
+        "strings.h": "c",
+        "buttons_interface.h": "c",
+        "spi_interface.h": "c"
+    }
 }

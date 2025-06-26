@@ -1,8 +1,33 @@
 #ifndef I2C_INTERFACE_H
 #define I2C_INTERFACE_H
 
+#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 #include <stddef.h>
+
+//TODO - SOMEONE: Once this file name is changed this must be replaced
+#include "inputs_interface/encoder_interface.h"
+
+#define INPUT_MODE_DISPLAY_AREA_LENGTH    10
+#define INSTRUMENT_DISPLAY_AREA_LENGTH  2
+#define TRACK_DISPLAY_AREA_LENGTH       2
+#define TEMPO_DISPLAY_AREA_LENGTH       3
+#define KEY_DISPLAY_AREA_LENGTH         2
+
+#define LCD_INSTRUMENT_ROW_CURSOR  1  
+#define LCD_INSTRUMENT_COL_CURSOR 10 
+#define LCD_TEMPO_COL_CURSOR      13
+#define LCD_TEMPO_ROW_CURSOR      1
+#define LCD_TRACK_COL_CURSOR      10
+#define LCD_TRACK_ROW_CURSOR      0
+#define LCD_KEY_COL_CURSOR        13
+#define LCD_KEY_ROW_CURSOR        0
+#define LCD_MENU_COL_CURSOR       0
+#define LCD_MENU_ROW_CURSOR       0
+#define LCD_MODE_COL_CURSOR       0
+#define LCD_MODE_ROW_CURSOR       1
+
 
 /*** SerLCD ***/
 //<
@@ -94,13 +119,22 @@
 
 // Function prototypes
 void i2c_interface_init(void);
-
 void i2c_lcd_transmit(uint8_t buf);
 void i2c_lcd_read(uint8_t buf);
 void i2c_lcd_set_cursor(uint8_t c, uint8_t l);
 
 void ser_lcd_write_string(unsigned char *str, size_t len);
+void ser_lcd_write_int(int n);
 void ser_lcd_init(void);
+
+void i2c_lcd_draw_input(enum input_modes input_mode);
+void i2c_lcd_draw_playback(enum input_modes input_mode, play_modes_struct play_mode);
+void i2c_lcd_draw_track(uint8_t track);
+//TODO - Uncomment this function once midi file is written
+//void i2c_lcd_draw_key(music_key_enum key);
+void i2c_lcd_draw_instrument(uint8_t instr);
+void i2c_lcd_draw_tempo(uint16_t tempo);
+void i2c_lcd_clear();
 
 // Audio amplifier functions
 void max9744_init(void);
@@ -112,6 +146,5 @@ void max9744_unmute(void);
 int audio_amplifier_gpio_init(void);
 void audio_amplifier_hardware_enable(void);
 void audio_amplifier_hardware_disable(void);
-
 
 #endif // I2C_INTERFACE_H
