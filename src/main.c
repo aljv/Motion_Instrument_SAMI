@@ -880,7 +880,7 @@ int main(void)
   
     // Initialize audio amplifier GPIO control pins
     LOG_INF("Initializing audio amplifier GPIO...");
-    ret = audio_amplifier_gpio_init();
+    int ret = audio_amplifier_gpio_init();
     if (ret < 0) {
         LOG_ERR("Failed to initialize audio amplifier GPIO");
         return ret;
