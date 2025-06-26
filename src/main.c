@@ -16,14 +16,18 @@
 
 #include "hw_interface/ble_interface/ble_interface.h"
 #include "hw_interface/sd_card_interface/sd_card_interface.h"
+#include "hw_interface/VS1053_interface/VS1053_interface.h"
+#include "hw_interface/VS1053_interface/midi.h"
 #include "hw_interface/spi_interface.h"
 #include "hw_interface/i2c_interface.h"
-#include "hw_interface/inputs_interface/buttons_interface.h"
-
+#include "hw_interface/uart_interface.h"
 // TODO - Patrick: IMPORTANT
 //                 this include has to be changed to state_machine.h once the file is changed
 //    
+#include "hw_interface/inputs_interface/buttons_interface.h"
 #include "hw_interface/inputs_interface/encoder_interface.h"
+  
+
 
 #include <dk_buttons_and_leds.h>
 
@@ -859,37 +863,63 @@ void draw_all_UI()
 //
 int main(void)
 {
-    LOG_INF("Start of main\n");
+    LOG_INF("Starting SAMI Motion Instrument application");
+  
+    
+
+    LOG_INF("Initializing UART interface..");
+    app_uart_init();
+        
+    // Initialize I2C interface
+    LOG_INF("Initializing I2C interface...");
+    i2c_interface_init();
+
+    LOG_INF("Initializing VS1053 codec...");
+    VS1053Init();
+    k_msleep(2000);
+  
+    // Initialize audio amplifier GPIO control pins
+    LOG_INF("Initializing audio amplifier GPIO...");
+    ret = audio_amplifier_gpio_init();
+    if (ret < 0) {
+        LOG_ERR("Failed to initialize audio amplifier GPIO");
+        return ret;
+    }
+
+    //audio_amplifier_hardware_enable();
+    // Initialize audio amplifier via I2C
+    LOG_INF("Initializing MAX9744 audio amplifier...");
+    max9744_set_volume(DEFAULT_AMP_VOL);
+    k_msleep(100);
+    audio_amplifier_hardware_enable();
+  
+    LOG_INF("Initializing Inputs and Encoders...");
     GPIO_Init();
-
-    //TESTING PURPOSES - Set initial state of fsm settings
-    //                   since SD card isn't working yet
-    fsm.input_mode = PLAYMODE_SINGLE_BTN;
-    fsm.play_mode.single_btn_play_mode = PLAYBACK_SINGLE_LATCH;
-    fsm.play_mode.multi_btn_play_mode = PLAYBACK_MULTI_NOTE;
-    fsm.play_mode.ble_play_mode = PLAYBACK_BLE_0;
-    fsm.playback_state = PLAYBACK_STOP;
-    fsm.current_track = 1;
-    fsm.instrument = 12;
-    fsm.tempo = 120;
-
-    //TESTING PURPOSES - This works (PWR LED is red)
-    LOG_INF("Setting PWR LED");
-    gpio_pin_set_dt(&PowerLED, 1);
 
     //AppTimer_Init();
     //AppTimer_Start();
     //Saadc_Init();
-
-    CheckDevices();
+    
+    LOG_INF("Initializing SD Card...");
     SDcardInterfaceInit(); //Error here when attempting to run - see sd_card_interface.c
 
-    //TESTING PURPOSES - All draw functions EXCEPT draw_key working
-    draw_all_UI();
+    
+    //TESTING PURPOSES - This works (PWR LED is red)
+    LOG_INF("Setting PWR LED");
+    gpio_pin_set_dt(&PowerLED, 1);
+  
+    //check_vs1053_audio_output();
+    // Set VS1053 volume
 
-    dk_leds_init();
-    dk_set_led_on(DK_LED1);
-    LOG_INF("LED turned on\n");
+    VS1053UpdateVolume(0x30, 0x30);
+    midiSetChannelBank(0, 0x79);
+    midiSetChannelVolume(0, 100);    
+    midiSetInstrument(0, ELECTRIC_GRAND_PIANO);
+
+    k_msleep(250);
+    run_midi_tests();
+  
+    
 
     while (1)
     {
@@ -916,8 +946,6 @@ int main(void)
             //arpTempo_set(fsm.tempo);
             track_new = false;
         }
-
-        k_sleep(K_SECONDS(1));
 
     }
 
