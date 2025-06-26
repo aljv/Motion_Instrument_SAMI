@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 //TODO - SOMEONE: Once this file name is changed this must be replaced
-#include "inputs_interface/encoder_interface.h"
+#include "state_machine_defs.h"
 
 #define INPUT_MODE_DISPLAY_AREA_LENGTH    10
 #define INSTRUMENT_DISPLAY_AREA_LENGTH  2

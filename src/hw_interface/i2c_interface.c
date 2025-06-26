@@ -6,6 +6,7 @@
 
 #include "i2c_interface.h"
 #include "VS1053_interface/VS1053_interface.h"
+#include "state_machine_defs.h"
 
 #define MODULE i2c_interface
 #include <zephyr/logging/log.h>

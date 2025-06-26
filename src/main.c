@@ -27,7 +27,7 @@
 #include "hw_interface/inputs_interface/buttons_interface.h"
 #include "hw_interface/inputs_interface/encoder_interface.h"
   
-
+#include "hw_interface/state_machine_defs.h"
 
 #include <dk_buttons_and_leds.h>
 

@@ -9,9 +9,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
-//TODO - Patrick: IMPORTANT. This name has to be changed to "state_machine.h"
-//                           when the file name is changed
-#include "inputs_interface/encoder_interface.h"
+#include "state_machine_defs.h"
 
 // Use this as a guideline for your TODOs
 
