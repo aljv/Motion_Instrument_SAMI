@@ -116,7 +116,7 @@ fsm_struct fsm = {
         .ble_play_mode = PLAYBACK_BLE_0,
     },
 
-    .instrument = 0,
+    .instrument = 1,
     .tempo = 120, //standard tempo
     .octave = 3, //middle C
 
@@ -819,7 +819,9 @@ void UI_Handler(fsm_struct* fsm)
     }
     else if (fsm->draw_ui_entry)
     {
+        //
         //TODO - Patrick: Replace this with function to write settings to SD - not written yet
+        //
         //write_to_sd(fsm);
         draw_all_UI();
         fsm->draw_ui_entry = false;
@@ -862,17 +864,6 @@ int main(void)
     LOG_INF("Start of main\n");
     GPIO_Init();
 
-    //TESTING PURPOSES - Set initial state of fsm settings
-    //                   since SD card isn't working yet
-    fsm.input_mode = PLAYMODE_SINGLE_BTN;
-    fsm.play_mode.single_btn_play_mode = PLAYBACK_SINGLE_LATCH;
-    fsm.play_mode.multi_btn_play_mode = PLAYBACK_MULTI_NOTE;
-    fsm.play_mode.ble_play_mode = PLAYBACK_BLE_0;
-    fsm.playback_state = PLAYBACK_STOP;
-    fsm.current_track = 1;
-    fsm.instrument = 12;
-    fsm.tempo = 120;
-
     //TESTING PURPOSES - This works (PWR LED is red)
     LOG_INF("Setting PWR LED");
     gpio_pin_set_dt(&PowerLED, 1);
@@ -881,8 +872,9 @@ int main(void)
     //AppTimer_Start();
     //Saadc_Init();
 
-    CheckDevices();
+    //CheckDevices();
     SDcardInterfaceInit(); //Error here when attempting to run - see sd_card_interface.c
+    SDcardInit();
 
     //TESTING PURPOSES - All draw functions EXCEPT draw_key working
     draw_all_UI();
@@ -903,6 +895,13 @@ int main(void)
 
         ENC1_Handler(&fsm);
         ENC2_Handler(&fsm);
+
+        //TESTING PURPOSES - When you click BTN1 it will try to initialize the SD card again
+        if (fsm.btn_change[0])
+        {
+            SDcardInterfaceInit();
+            fsm.btn_change[0] = false;
+        }
 
         //If track_new is set, we need to parse the new song and get the new key/tempo
         if(track_new)

@@ -45,7 +45,7 @@ void i2c_lcd_transmit(uint8_t buf)
         }
         else
         {
-                LOG_INF("Successfully wrote to I2C device");
+                //LOG_INF("Successfully wrote to I2C device");
         }
 
         return;
@@ -61,7 +61,7 @@ void i2c_lcd_read(uint8_t buf)
         }
         else
         {
-                LOG_INF("Successfully read from I2C device");
+                //LOG_INF("Successfully read from I2C device");
         }
 
         return;

@@ -27,13 +27,22 @@ LOG_MODULE_REGISTER(MODULE);
 //
 //Global variables
 //
-#define DISK_MOUNT_PT   "/SD:"
-//#define DISK_NAME       "SD Card slot" //Must match the overlay label
+//Disk names
+#define MOUNT_POINT   "/SD:"
+#define DISK_NAME     "SD" //Must match the overlay label
+//                            NOTE: Apparently labels shouldnt be used anymore.
 //FATFS objects
 static FATFS fs;
 static DIR dir;
 static FILINFO fno;
 static FIL file;
+//TESTING
+static struct fs_mount_t mp = {
+    .type = FS_FATFS,
+    .fs_data = &fs,
+    .storage_dev = (void *)DISK_NAME,
+    .mnt_point = MOUNT_POINT
+};
 //SD card logical drive
 #define SD_DRIVE        "SD:"
 //MIDI directory
@@ -57,9 +66,132 @@ static uint8_t num_tracks = 0;
  * 
  * @return int 0 on success, negative error code otherwise
  */
+int SDcardInterfaceInit(void)
+{
+    const char *disk_pdrv = DISK_NAME;
+    uint64_t memory_size_mb;
+    uint32_t block_count;
+    uint32_t block_size;
+    int rc;
+    /*
+    const struct device *mmc_dev = device_get_binding("mmc");
+    if (mmc_dev == NULL){
+        LOG_INF("MMC Device not found");
+        return -1;
+    }
+
+    if (!device_is_ready(mmc_dev)){
+        LOG_INF("MMC Device not ready");
+        return -1;
+    }
+
+    LOG_INF("MMC Device found and ready\n");
+    */
+
+    for (int retries = 3; retries > 0; retries--)
+    {
+        rc = disk_access_init(DISK_NAME);
+        if (rc == 0){
+            break;
+        }
+        LOG_INF("Disk init attempt %d failed, code %d", (4-retries), rc);
+        k_sleep(K_MSEC(1000));
+    }
+    
+
+    if (rc != 0){
+        LOG_INF("Disk init failed three times");
+        return -1;
+    }
+
+    rc = disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_COUNT, &block_count);
+    if (rc != 0){
+        LOG_INF("Unable to get sector count");
+        return -1;
+    }
+    rc = disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_SIZE, &block_size);
+    if (rc != 0){
+        LOG_INF("Unable to get sector size");
+        return -1;
+    }
+
+    memory_size_mb = (uint64_t)block_count * block_size / (1024 * 1024);
+    LOG_INF("SD Card capacity: %llu", memory_size_mb);
+    LOG_INF("Block size: %u bytes. Block count: %u\n", block_size, block_count);
+
+    LOG_INF("SD card initialized\n");
+    return 0;
+}
+
+int SDcardInit(void)
+{
+    static struct fs_dir_t dir;
+    //struct fs_dirent entry;
+    int rc;
+    //int num_files = 0;
+
+    static FATFS fs;
+
+    rc = fs_mount(&mp);
+    LOG_INF("Mount result: %d", rc);
+    if (rc != 0){
+        LOG_INF("Failed to mount filesystem\n");
+        return -1;
+    }
+    LOG_INF("Filesystem mounted");
+    k_sleep(K_MSEC(1500));
+
+    rc = fs_opendir(&dir, "/");
+    if (rc != 0){
+        LOG_INF("fs_opendir result: %d", rc);
+    }
+
+    struct fs_statvfs stats;
+    rc = fs_statvfs("/SD:", &stats);
+    LOG_INF("fs_statvfs result: %d", rc);
+    if (rc == 0){
+        LOG_INF("Free space: %lu blocks. Block size: %lu bytes\n", (unsigned long)stats.f_bfree, (unsigned long)stats.f_bsize);
+    }
+
+    const char *paths[] = {
+        "set.txt",          // No leading slash
+        "/set.txt",         // With leading slash  
+        "0:/set.txt",       // With drive number
+        "SD:/set.txt",      // With SD prefix
+        "/SD:/set.txt"
+    };
+
+    struct fs_file_t test_file;
+    memset(&test_file, 0, sizeof(test_file));
+
+    rc = fs_open(&test_file, "/SD:/set.txt", FS_O_READ);
+    LOG_INF("fs_open result: %d", rc);
+
+    if (rc != 0){
+        return -1;
+    }else{
+        rc = fs_close(&test_file);
+    }
+
+    /*FIL fatfs_file;
+    FRESULT fr = f_open(&fatfs_file, paths[0], FA_READ);
+    LOG_INF("FatFS f_open result %d", fr);
+    
+
+    if (fr == 0){
+        LOG_INF("set.txt open successful");
+        f_close(&fatfs_file);
+    }*/
+
+    LOG_INF("SD Card initialized and read");
+    k_sleep(K_MSEC(500));
+    return 0;
+}
+
+ /*
 int SDcardInterfaceInit(void) {
     //Small delay
-    k_sleep(K_MSEC(500));
+    //k_sleep(K_MSEC(500));
 
     int ret_code = 0;
     uint8_t retries = 3;
@@ -102,7 +234,7 @@ int SDcardInterfaceInit(void) {
     LOG_INF("Disk init failed three times\n");
     return -1;
 }
-
+*/
 int CheckDevices(void)
 {
     const struct device *device_list;
@@ -128,7 +260,7 @@ int CheckDevices(void)
  * @brief Initialize the SD card file system
  * 
  * @return int 0 on success, negative error code otherwise
- */
+ 
 
  // TODO - Patrick: Check all these
 
@@ -176,6 +308,7 @@ int SDcardInit(void) {
 
     return 0;
 }
+*/
 
 /**
  * @brief Scan for MIDI files in the MIDI directory
@@ -241,7 +374,8 @@ int scan_midi_files(void) {
  * @return uint8_t Number of tracks
  */
 uint8_t get_track_count(void) {
-    return num_tracks;
+
+    return num_tracks-1;
 }
 
 /**
