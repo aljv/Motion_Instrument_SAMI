@@ -134,7 +134,7 @@ void i2c_lcd_draw_track(uint8_t track);
 //void i2c_lcd_draw_key(music_key_enum key);
 void i2c_lcd_draw_instrument(uint8_t instr);
 void i2c_lcd_draw_tempo(uint16_t tempo);
-void i2c_lcd_clear();
+void i2c_lcd_clear(void);
 
 // Audio amplifier functions
 void max9744_init(void);

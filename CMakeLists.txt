@@ -10,6 +10,7 @@ project(central_and_peripheral_hr)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
   src/main.c
+  src/ui_thread.c
 )
 
 # INCLUDE DIRECTORIES

@@ -282,7 +282,7 @@ void i2c_lcd_draw_tempo(uint16_t tempo)
         }
 }
 
-void i2c_lcd_clear()
+void i2c_lcd_clear(void)
 {
         i2c_lcd_set_cursor(0,0);
         ser_lcd_write_string(" ", 16);

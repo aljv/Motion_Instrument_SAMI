@@ -137,6 +137,19 @@ void mfwrite();
 
 #define NUM_MIDI_NOTES 128 //0-127
 
+#define MAX_MIDI_DATA_LENGTH        4092
+#define MAX_MIDI_TRACK_LENGTH       4092
+#define MAX_MIDI_TRACKS             2
+
+#define MAX_INSTRUMENTS 13
+#define MIN_INSTRUMENTS 1
+
+#define MAX_TEMPO 240
+#define MIN_TEMPO 40
+
+#define DEFAULT_MIDI_NOTE_DURATION  960
+
+
 void midiSetInstrument(uint8_t chan, uint8_t inst);
 void midiSetChannelVolume(uint8_t chan, uint8_t vol);
 void midiSetChannelBank(uint8_t chan, uint8_t bank);
